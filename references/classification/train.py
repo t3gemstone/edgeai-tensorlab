@@ -32,7 +32,7 @@ def train_one_epoch(model, criterion, optimizer, data_loader, device, epoch, arg
     for i, (image, target) in enumerate(metric_logger.log_every(data_loader, args.print_freq, header)):
         start_time = time.time()
         image, target = image.to(device), target.to(device)
-        with torch.amp.autocast(device_type=device, enabled=scaler is not None):
+        with torch.amp.autocast(device_type=device.type, enabled=scaler is not None):
             output = model(image)
             loss = criterion(output, target)
 
@@ -492,7 +492,8 @@ def main(args):
         if args.distributed:
             train_sampler.set_epoch(epoch)
         train_one_epoch(model, criterion, optimizer, data_loader, device, epoch, args, model_ema, scaler)
-        lr_scheduler.step()
+        if not(args.dont_update_parameters):
+            lr_scheduler.step()
         epoch_acc = evaluate(args, model, criterion, data_loader_test, device=device)
         if model_ema:
             epoch_acc = evaluate(args, model_ema, criterion, data_loader_test, device=device, log_suffix="EMA")
@@ -659,7 +660,7 @@ def get_args_parser(add_help=True):
     parser.add_argument("--weights", default=None, type=str, help="the weights enum name to load")
     parser.add_argument("--backend", default="PIL", type=str.lower, help="PIL or tensor - case insensitive")
     parser.add_argument("--use-v2", action="store_true", help="Use V2 transforms")
-    parser.add_argument("--weights-state-dict-name", default="model", type=str, help="the weights member name to load from the checkpoint")
+    parser.add_argument("--weights-state-dict-name", nargs='+', default=["model", "state_dict"], help="the weights member name to load from the checkpoint")
 
     parser.add_argument("--dont-update-parameters", default=False, type=bool, help="The model parameters will not be updated during training if this flag is set to True")
     # options to create faster models
