@@ -8,7 +8,7 @@ from mmcv.cnn.bricks.transformer import (BaseTransformerLayer,
                                          build_attention,
                                          build_feedforward_network)
 from mmcv.ops.multi_scale_deform_attn import MultiScaleDeformableAttnFunction
-from mmcv.ops.multi_scale_deform_attn import multi_scale_deformable_attn_pytorch
+from mmdet3d.models.utils.multi_scale_deform_attn import multi_scale_deformable_attn_pytorch
 
 
 from .positional_encoding import pos2posemb3d
@@ -488,6 +488,7 @@ class DeformableFeatureAggregationCuda(BaseModule):
             im2col_step=64,
             batch_first=True,
             bias=1.,
+            grid_sample_mode='bilinear',
             ):
         super(DeformableFeatureAggregationCuda, self).__init__()
         self.embed_dims = embed_dims
@@ -508,6 +509,7 @@ class DeformableFeatureAggregationCuda(BaseModule):
         self.drop = nn.Dropout(dropout)
         self.im2col_step = im2col_step
         self.bias = bias
+        self.grid_sample_mode = grid_sample_mode
 
     def init_weight(self):
         constant_init(self.weights_fc, val=0.0, bias=0.0)
@@ -558,7 +560,7 @@ class DeformableFeatureAggregationCuda(BaseModule):
                     weights, self.im2col_step)
         else:
             output = multi_scale_deformable_attn_pytorch(
-                    feat_flatten, spatial_flatten, points_2d, weights)
+                    feat_flatten, spatial_flatten, points_2d, weights, self.grid_sample_mode)
 
         output = output.reshape(bs, self.num_cams, num_anchor, -1)
 

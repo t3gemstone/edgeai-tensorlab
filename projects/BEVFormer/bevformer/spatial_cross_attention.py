@@ -5,7 +5,7 @@
 #  Modified by Zhiqi Li
 # ---------------------------------------------
 
-from mmcv.ops.multi_scale_deform_attn import multi_scale_deformable_attn_pytorch
+from mmdet3d.models.utils.multi_scale_deform_attn import multi_scale_deformable_attn_pytorch
 
 import warnings
 import torch
@@ -312,7 +312,9 @@ class MSDeformableAttention3D(BaseModule):
                  dropout=0.1,
                  batch_first=True,
                  norm_cfg=None,
-                 init_cfg=None):
+                 init_cfg=None,
+                 grid_sample_mode='bilinear'
+                 ):
         super().__init__(init_cfg)
         if embed_dims % num_heads != 0:
             raise ValueError(f'embed_dims must be divisible by num_heads, '
@@ -322,6 +324,7 @@ class MSDeformableAttention3D(BaseModule):
         self.batch_first = batch_first
         self.output_proj = None
         self.fp16_enabled = False
+        self.grid_sample_mode = grid_sample_mode
 
         # you'd better set dim_per_head to a power of 2
         # which is more efficient in the CUDA implementation
@@ -503,7 +506,7 @@ class MSDeformableAttention3D(BaseModule):
         #  attention_weights.shape: bs, num_query, num_heads, num_levels, num_all_points
         #
         output = multi_scale_deformable_attn_pytorch(
-            value, spatial_shapes, sampling_locations, attention_weights)
+            value, spatial_shapes, sampling_locations, attention_weights, self.grid_sample_mode)
 
         if not self.batch_first:
             output = output.permute(1, 0, 2)

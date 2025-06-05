@@ -99,7 +99,9 @@ model = dict(
                         dict(
                             type='TemporalSelfAttention',
                             embed_dims=_dim_,
-                            num_levels=1),
+                            num_levels=1,
+                            # grid_sample_mode='nearest'
+                            ),
                         dict(
                             type='SpatialCrossAttention',
                             pc_range=point_cloud_range,
@@ -107,7 +109,9 @@ model = dict(
                                 type='MSDeformableAttention3D',
                                 embed_dims=_dim_,
                                 num_points=8,
-                                num_levels=_num_levels_),
+                                num_levels=_num_levels_,
+                                # grid_sample_mode='nearest'
+                                ),
                             embed_dims=_dim_,
                         )
                     ],
@@ -130,7 +134,9 @@ model = dict(
                          dict(
                             type='CustomMSDeformableAttention',
                             embed_dims=_dim_,
-                            num_levels=1),
+                            num_levels=1,
+                            # grid_sample_mode='nearest'
+                            ),
                     ],
 
                     feedforward_channels=_ffn_dim_,
