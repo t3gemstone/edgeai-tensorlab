@@ -140,6 +140,7 @@ class BEVFormer(MVXTwoStageDetector):
                     export_BEVFormer(self.onnx_model, inputs, data_samples, **kwargs)
                     # Export onnx only once
                     self.save_onnx_model = False
+                    exit()
 
                 return self.predict(inputs, data_samples, **kwargs)
         elif mode == 'tensor':
