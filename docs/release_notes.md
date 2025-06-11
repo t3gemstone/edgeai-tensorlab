@@ -7,6 +7,9 @@
 * tidl_tools version: **10_01_04_01**
 * Date: 2024 Dec ~ 2025 March
 
+### edgeai-benchmark core runtime apis
+[2025-03-29 update] edgai-benchmark/edgeai_benchmark/core contains simplified wrapper apis that are easy to use and understand over the core runtimes. See edgeai-benchmark/run_tutorials_script_pc.sh and edgeai-benchmark/tutorials to understand the usage of these core apis.
+
 ### New models edgeai-benchmark / edgeai-modelzoo
 We are in the process of adding support for several new models. Configs for models verified in this release are in this repository and the models are available in edgeai-modelzoo. The following new models have been compiled using edgeai-benchmark and verified:
 
@@ -21,6 +24,8 @@ We are in the process of adding support for several new models. Configs for mode
 | efficientdet_effb0_bifpn_lite | Object Detection                      | edgeai-mmdetection     |
 | YOLOXPose                     | Keypoint detection / Human Pose       | edgeai-mmpose          |
 
+**Note**: some of these models don't work natively in 10.1, but require a **firmware update** in the SDK and model compilation with firmware version set corresponding to that in tidl-tools. A separate script called  run_benchmarks_firmware_update_pc.sh is provided in edgeai-benchmark to compile models with newer firmware.
+
 ### New models in edgeai-modelmaker
 | Model name                    | Model Type                            | Source repository      |
 |-------------------------------|---------------------------------------|------------------------|
@@ -30,6 +35,9 @@ We are in the process of adding support for several new models. Configs for mode
 
 ### Tech reports
 New Tech report on 3D Object Detection - see the section on "Tech Reports"
+
+### Deprecations
+edgeai-yolox is being deprecated - use [edgeai-mmpose](edgeai-mmpose) for Keypoint detection and [edgeai-mmdetection](edgeai-mmdetection) for Object Detection. The previous version of edgeai-yolox is still available in the previous branches of this repository or [here](https://github.com/TexasInstruments/edgeai-yolox)
 
 <hr>
 
