@@ -92,7 +92,7 @@ class PETR_export_model(nn.Module):
 
         self.img_metas = img_metas
 
-        # update real input shae of each single img
+        # update real input shape of each single img
         for img_meta in self.img_metas:
             img_meta.update(input_shape=input_shape)
 
@@ -195,7 +195,7 @@ class PETR_export_model(nn.Module):
             img_feats_all = []
             img_feats_all.append(
                  torch.cat((img_feats_reshaped[0], \
-                    valid_prev_feats*prev_feats_map + (1-valid_prev_feats)*img_feats_reshaped[0]), dim=1))
+                    valid_prev_feats*prev_feats_map + (1.0-valid_prev_feats)*img_feats_reshaped[0]), dim=1))
             outs = self.pts_bbox_head(img_feats_all, self.img_metas, coords3d=coords3d)
         else:
             outs = self.pts_bbox_head(img_feats_reshaped, self.img_metas, masks=None, coords3d=coords3d)
