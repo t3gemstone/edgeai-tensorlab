@@ -36,9 +36,11 @@ def export_PETR(model, inputs=None, data_samples=None,
         prev_feats_map, batch_img_metas = onnxModel.get_temporal_feats(
             onnxModel.queue, onnxModel.memory, img, batch_img_metas, onnxModel.img_feat_size)
         if torch.is_tensor(prev_feats_map) is False:
+            prev_feats_map = torch.zeros([1]+model.img_feat_size[0],dtype=img.dtype,device=img.device)
             is_prev_feat = 0
         else:
             is_prev_feat = 1
+        is_prev_feat = torch.tensor(is_prev_feat, dtype=torch.float32, device=img.device) 
 
     batch_img_metas = onnxModel.add_lidar2img(img, batch_img_metas)
     onnxModel.prepare_data(img, batch_img_metas)
