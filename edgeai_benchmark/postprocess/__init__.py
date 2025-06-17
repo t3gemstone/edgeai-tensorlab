@@ -51,8 +51,8 @@ class PostProcessTransforms(utils.TransformsCompose):
     ###############################################################
     # post process transforms for classification
     ###############################################################
-    def get_transform_classification(self):
-        postprocess_classification = [SqueezeAxis(), ArgMax(axis=-1)]
+    def get_transform_classification(self,argmax_axis=-1):
+        postprocess_classification = [SqueezeAxis(), ArgMax(axis=argmax_axis)]
         if self.settings.save_output:
             postprocess_classification += [ClassificationImageSave(self.settings.num_output_frames)]
         #
