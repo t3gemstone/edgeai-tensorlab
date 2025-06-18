@@ -28,6 +28,9 @@
 
 import cv2
 from edgeai_benchmark import constants, utils, datasets, preprocess, sessions, postprocess, metrics
+from onnxruntime import GraphOptimizationLevel
+
+ORT_DISABLE_ALL = GraphOptimizationLevel.ORT_DISABLE_ALL
 
 def get_configs(settings, work_dir):
     # get the sessions types to use for each model type
@@ -93,20 +96,25 @@ def get_configs(settings, work_dir):
         #    metric=dict(),
         #    model_info=dict(metric_reference={'mAP':0.4})
         #),
+
         ## 3dod-8140: BEVFormer for pandaset
         #'3dod-8140':utils.dict_update(bev_frame_cfg_ps,
         #    task_name='BEVFormer',
         #    # pad = (left, top, right, bottom) = (0, 0, 0, 30)
         #    preprocess=preproc_transforms.get_transform_bev_bevformer((1080, 1920), (540, 960), (0, 0, 0, 4), backend='cv2', interpolation=cv2.INTER_CUBIC),
         #    session=onnx_session_type(**sessions.get_onnx_session_cfg(settings, work_dir=work_dir, input_mean=[(123.675, 116.280, 103.530)], input_scale=[(0.017125, 0.017507, 0.017429)], input_optimization=False),
-        #        runtime_options=utils.dict_update(settings.runtime_options_onnx_p2(),
-        #            {'advanced_options:output_feature_16bit_names_list':''}),
-        #        model_path=f'../edgeai-modelforest/models-cl/vision/detection_3d/pandaset/bevformer/bevformer_tiny_mod_pandaset_544x960_20250519.onnx'),
+        #        runtime_options=utils.dict_update(settings.runtime_options_onnx_p2(ext_options={'onnxruntime:graph_optimization_level': ORT_DISABLE_ALL,
+        #                        'object_detection:meta_arch_type': 10,
+        #                        'object_detection:meta_layers_names_list':
+        #                        f'{settings.models_path}/vision/detection_3d/pandaset/mmdet3d/bevformer/bevformer_tiny_mod_metaarch.prototxt'}),
+        #            {'advanced_options:output_feature_16bit_names_list':'','advanced_options:max_num_subgraph_nodes': 1536}),
+        #        model_path=f'{settings.models_path}/vision/detection_3d/pandaset/mmdet3d/bevformer/bevformer_tiny_mod_pandaset_544x960_20250602_opt.onnx'),
         #    postprocess=postproc_transforms.get_transform_bev_detection_base(),
         #    metric=dict(),
         #    model_info=dict(metric_reference={'mAP':0.4})
         #),
-        ## for pandaset the transforms are different
+        ## 3dod-8150: FCOS3D for pandaset
+        ## For pandaset the transforms are different
         #'3dod-8150':utils.dict_update(bev_mv_image_cfg_ps,
         #    task_name='FCOS3D',
         #    # pad = (left, top, right, bottom) = (0, 0, 0, 28)
@@ -114,7 +122,7 @@ def get_configs(settings, work_dir):
         #    session=onnx_session_type(**sessions.get_onnx_session_cfg(settings, work_dir=work_dir, input_mean=[(103.530, 116.280, 123.675)], input_scale=[(1.0, 1.0, 1.0)], input_optimization=False),
         #        runtime_options=utils.dict_update(settings.runtime_options_onnx_p2(),
         #            {'advanced_options:output_feature_16bit_names_list':''}),
-        #        model_path=f'../edgeai-modelforest/models-cl/vision/detection_3d/pandaset/fcos3d/fcos3d_mod_pandaset_r101_928x1600_20250509.onnx'),
+        #        model_path=f'{settings.models_path}/vision/detection_3d/pandaset/mmdet3d/fcos3d/fcos3d_mod_pandaset_r101_928x1600_20250509.onnx'),
         #    postprocess=postproc_transforms.get_transform_fcos3d(),
         #    metric=dict(),
         #    model_info=dict(metric_reference={'mAP':0.4})
@@ -136,7 +144,6 @@ def get_configs(settings, work_dir):
             metric=dict(),
             model_info=dict(metric_reference={'mAP':0.4})
         ),
-
         # 3dod-8161: FastBEV w/ NMS without temporal frame for pandaset
         '3dod-8161':utils.dict_update(bev_frame_cfg_ps,
             task_name='FastBEV_f1',

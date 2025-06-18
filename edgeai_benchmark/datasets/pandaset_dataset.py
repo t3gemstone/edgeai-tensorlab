@@ -305,8 +305,6 @@ class_to_name_type= {
     0: 'Car',
     1: 'Pedestrian',
     2: 'Temporary Construction Barriers', 
-    # 3: 'Pedestrian',
-    # 4: 'Temporary Construction Barriers'
 }
 
 
