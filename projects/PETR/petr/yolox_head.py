@@ -6,6 +6,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 from mmcv.cnn import (ConvModule, DepthwiseSeparableConvModule)
 from mmengine.model.weight_init import bias_init_with_prob
+from mmengine.structures import InstanceData
 from mmcv.ops.nms import batched_nms
 
 from mmdet.models.task_modules.prior_generators import MlvlPointGenerator
@@ -726,12 +727,21 @@ class YOLOXHeadCustom(BaseDenseHead):
         offset_priors = torch.cat(
             [priors[:, :2] + priors[:, 2:] * 0.5, priors[:, 2:]], dim=-1)
 
-        assign_result = self.assigner.assign(
-            cls_preds.sigmoid() * objectness.unsqueeze(1).sigmoid(),
-            offset_priors, decoded_bboxes, gt_bboxes, gt_labels)
 
-        sampling_result = self.sampler.sample(assign_result, priors, gt_bboxes)
-        sampling_result_centers2d = self.sampler_.sample(assign_result, priors, centers2d)
+        #assign_result = self.assigner.assign(
+        #    cls_preds.sigmoid() * objectness.unsqueeze(1).sigmoid(),
+        #    offset_priors, decoded_bboxes, gt_bboxes, gt_labels)
+        pred_instances = InstanceData(scores=cls_preds.sigmoid() * objectness.unsqueeze(1).sigmoid(),
+                                      bboxes=decoded_bboxes,
+                                      priors=offset_priors)
+        gt_instances = InstanceData(bboxes=gt_bboxes, labels=gt_labels)
+        assign_result = self.assigner.assign(pred_instances, gt_instances)
+
+        pred_instances = InstanceData(priors=priors)
+        gt_instances   = InstanceData(bboxes_3d=gt_bboxes)
+        sampling_result = self.sampler.sample(assign_result, pred_instances, gt_instances)
+        gt_instances   = InstanceData(bboxes_3d=centers2d)
+        sampling_result_centers2d = self.sampler_.sample(assign_result, pred_instances, gt_instances)
         pos_inds = sampling_result.pos_inds
         num_pos_per_img = pos_inds.size(0)
 
@@ -766,8 +776,3 @@ class YOLOXHeadCustom(BaseDenseHead):
     def _get_centers2d_target(self, centers2d_target, centers2d_labels, priors):
         centers2d_target = (centers2d_labels - priors[:, :2]) / priors[:, 2:]
         return centers2d_target
-
-    def loss_by_feat(self, **kwargs) -> dict:
-        """Calculate the loss based on the features extracted by the detection
-        head."""
-        pass

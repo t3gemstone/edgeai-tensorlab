@@ -42,7 +42,12 @@ map_name_from_general_to_detection = {
     'static_object.bicycle_rack': 'ignore',
 }
 
-nus_categories = ('car', 'truck', 'construction_vehicle', 'bus', 
+
+nus_categories = ('car', 'truck', 'trailer', 'bus', 'construction_vehicle', 'bicycle', 
+                  'motorcycle', 'pedestrian', 'traffic_cone', 'barrier')
+
+# Double check if BEVDet categories are NOT the same as the original nuScenes categories
+nus_categories_bevdet = ('car', 'truck', 'construction_vehicle', 'bus', 
                   'trailer', 'barrier', 'motorcycle', 'bicycle', 'pedestrian', 
                   'traffic_cone')
 
@@ -223,7 +228,7 @@ def get_gt_bevdet(info):
     for ann_info in info['ann_infos']:
         # Use ego coordinate.
         if (map_name_from_general_to_detection[ann_info['category_name']]
-                not in nus_categories
+                not in nus_categories_bevdet
                 or ann_info['num_lidar_pts'] + ann_info['num_radar_pts'] <= 0):
             continue
         box = Box(
@@ -241,7 +246,7 @@ def get_gt_bevdet(info):
         gt_box = np.concatenate([box_xyz, box_dxdydz, box_yaw, box_velo])
         gt_boxes.append(gt_box)
         gt_labels.append(
-            nus_categories.index(
+            nus_categories_bevdet.index(
                 map_name_from_general_to_detection[ann_info['category_name']]))
     return gt_boxes, gt_labels
 

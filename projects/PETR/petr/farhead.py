@@ -5,6 +5,7 @@ import copy
 
 from mmcv.cnn import Linear
 from mmengine.model.weight_init import bias_init_with_prob
+from mmengine.structures import InstanceData
 from mmdet.models.utils import multi_apply
 from mmdet.utils import reduce_mean
 
@@ -323,8 +324,8 @@ class FarHead(AnchorFreeHead):
 
     def prepare_for_dn(self, batch_size, reference_points, img_metas):
         if self.training and self.with_dn:
-            targets = [torch.cat((img_meta['gt_bboxes_3d']._data.gravity_center, img_meta['gt_bboxes_3d']._data.tensor[:, 3:]),dim=1) for img_meta in img_metas ]
-            labels = [img_meta['gt_labels_3d']._data for img_meta in img_metas ]
+            targets = [torch.cat((img_meta['gt_bboxes_3d'].gravity_center, img_meta['gt_bboxes_3d'].tensor[:, 3:]),dim=1) for img_meta in img_metas ]
+            labels = [img_meta['gt_labels_3d'] for img_meta in img_metas ]
             known = [(torch.ones_like(t)).cuda() for t in labels]
             know_idx = known
             unmask_bbox = unmask_label = torch.cat(known)
@@ -1019,8 +1020,10 @@ class FarHead(AnchorFreeHead):
 
         assign_result = self.assigner.assign(bbox_pred, cls_score, gt_bboxes,
                                                 gt_labels, gt_bboxes_ignore, self.match_costs, False)
-        sampling_result = self.sampler.sample(assign_result, bbox_pred,
-                                              gt_bboxes)
+        pred_instances_3d = InstanceData(priors=bbox_pred)
+        gt_instances_3d = InstanceData(bboxes_3d=gt_bboxes)
+        sampling_result = self.sampler.sample(assign_result, pred_instances_3d,
+                                              gt_instances_3d)
         pos_inds = sampling_result.pos_inds
         neg_inds = sampling_result.neg_inds
 
@@ -1209,7 +1212,7 @@ class FarHead(AnchorFreeHead):
 
         # regression L1 loss
         bbox_preds = bbox_preds.reshape(-1, bbox_preds.size(-1))
-        normalized_bbox_targets = normalize_bbox(known_bboxs, self.pc_range)
+        normalized_bbox_targets = normalize_bbox_streampetr(known_bboxs, self.pc_range)
         isnotnan = torch.isfinite(normalized_bbox_targets).all(dim=-1)
 
         bbox_weights = bbox_weights * self.code_weights
