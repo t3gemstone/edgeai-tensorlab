@@ -4,8 +4,9 @@ from .disable_object_sample_hook import DisableObjectSampleHook
 from .visualization_hook import Det3DVisualizationHook
 from .utils import is_parallel
 from .ema import MEGVIIEMAHook
+from .mlflow_hooks import MlflowHook
 
 __all__ = [
     'Det3DVisualizationHook', 'BenchmarkHook', 'DisableObjectSampleHook',
-    'is_parallel', 'MEGVIIEMAHook',
+    'is_parallel', 'MEGVIIEMAHook','MlflowHook',
 ]
