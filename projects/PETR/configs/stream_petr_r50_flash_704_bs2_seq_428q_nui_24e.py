@@ -319,26 +319,27 @@ optim_wrapper = dict(
     # TODO Add Amp
     # type='AmpOptimWrapper',
     # loss_scale='dynamic',
-    optimizer=dict(type='AdamW', lr=2e-4, weight_decay=0.01),
+    optimizer=dict(type='AdamW', lr=1e-4, weight_decay=0.01),
     paramwise_cfg=dict(custom_keys={
         'img_backbone': dict(lr_mult=0.1),
     }),
     clip_grad=dict(max_norm=35, norm_type=2))
 
+num_iters = (28130 // batch_size) * num_epochs
 param_scheduler = [
     dict(
         type='LinearLR',
         start_factor=1.0 / 3,
         begin=0,
-        end=1000,
+        end=500,
         by_epoch=False),
     dict(
         type='CosineAnnealingLR',
         # TODO Figure out what T_max
-        begin=0,
-        end=num_epochs,
-        T_max=num_epochs,
-        by_epoch=True,
+        begin=500,
+        end=num_iters,
+        T_max=num_iters,
+        by_epoch=False,
     )
 ]
 

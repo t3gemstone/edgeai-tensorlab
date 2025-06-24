@@ -18,7 +18,7 @@ class_names = [
     'motorcycle', 'bicycle', 'pedestrian', 'traffic_cone'
 ]
 
-metainfo = dict(classes=class_names, version='v1.0-mini')
+metainfo = dict(classes=class_names)
 
 batch_size = 1
 num_epochs = 24
@@ -27,7 +27,7 @@ queue_length = 1
 num_frame_losses = 1
 collect_keys=['lidar2img', 'intrinsics', 'extrinsics','timestamp', 'img_timestamp', 'ego_pose', 'ego_pose_inv']
 depthnet_config = {'type': 0, 'hidden_dim': 256, 'num_depth_bins': 50, 'depth_min': 1e-1, 'depth_max': 110, 'stride': 8}
-sample_with_score = False
+sample_with_score = True
 
 input_modality = dict(
     use_lidar=False,
@@ -38,7 +38,7 @@ input_modality = dict(
 
 model = dict(
     type='Far3D',
-    save_onnx_model=True,
+    save_onnx_model=False,
     use_grid_mask=True,
     stride=[8, 16, 32, 64],
     position_level=[0, 1, 2, 3],
@@ -48,7 +48,7 @@ model = dict(
         #std=[57.375, 57.120, 58.395],
         mean=[0.0, 0.0, 0.0],
         std=[1.0, 1.0, 1.0],
-        bgr_to_rgb=False,
+        bgr_to_rgb=False, # False always
         pad_size_divisor=32),
     img_backbone=dict(
         type='VoVNet', ###use checkpoint to save memory
@@ -82,8 +82,8 @@ model = dict(
         #sample_with_score=True,  # note threshold
         sample_with_score=sample_with_score,
         threshold_score=0.1,
-        #topk_proposal=None,
-        topk_proposal=10,
+        topk_proposal=None,
+        #topk_proposal=10,
         return_context_feat=True,
     ),
     pts_bbox_head=dict(
@@ -194,30 +194,27 @@ ida_aug_conf = {
         "rand_flip": False,
     }
 train_pipeline = [
-    dict(type='AV2LoadMultiViewImageFromFiles', to_float32=True),
+    dict(type='LoadMultiViewImageFromFiles', to_float32=True),
     dict(type='StreamPETRLoadAnnotations3D', with_bbox_3d=True, with_label_3d=True, with_bbox=True,
         with_label=True, with_bbox_depth=True),
     dict(type='ObjectRangeFilter', point_cloud_range=point_cloud_range),
     dict(type='ObjectNameFilter', classes=class_names),
-    dict(type='AV2ResizeCropFlipRotImageV2', data_aug_conf=ida_aug_conf),
+    dict(type='ResizeCropFlipRotImage', data_aug_conf = ida_aug_conf),
     dict(type='NormalizeMultiviewImage', **img_norm_cfg),
-    dict(type='AV2PadMultiViewImage', size='same2max'),
-    dict(type='AV2DownsampleQuantizeInstanceDepthmap', downsample=depthnet_config['stride'], depth_config=depthnet_config),
+    dict(type='PadMultiViewImage', size_divisor=32),
+    dict(type='DownsampleQuantizeInstanceDepthmap', downsample=depthnet_config['stride'], depth_config=depthnet_config),
     dict(
         type='CustomPack3DDetInputs',
         keys=['gt_bboxes_3d', 'gt_labels_3d', 'img', 'gt_bboxes', 'gt_bboxes_labels', 'centers_2d',
               'depths'],
         meta_keys=['filename', 'ori_shape', 'img_shape', 'pad_shape', 'scale_factor', 'flip', 
                    'box_mode_3d', 'box_type_3d', 'img_norm_cfg', 'scene_token', 'gt_bboxes_3d','gt_labels_3d', 'sample_idx',
-                   'prev_exists', 'gt_bboxes', 'gt_bboxes_labels', 'centers_2d', 'depths'] + collect_keys)
+                   'prev_exists', 'gt_bboxes', 'gt_bboxes_labels', 'centers_2d', 'depths', 'ins_depthmap', 'ins_depthmap_mask'] + collect_keys)
 ]
 test_pipeline = [
-    #dict(type='AV2LoadMultiViewImageFromFiles', to_float32=True),
     dict(type='LoadMultiViewImageFromFiles', to_float32=True),
-    #dict(type='AV2ResizeCropFlipRotImageV2', data_aug_conf=ida_aug_conf),
     dict(type='ResizeCropFlipRotImage', data_aug_conf = ida_aug_conf, training=False),
     dict(type='NormalizeMultiviewImage', **img_norm_cfg),
-    #dict(type='AV2PadMultiViewImage', size='same2max'),
     dict(type='PadMultiViewImage', size_divisor=32),
     dict(
         type='CustomMultiScaleFlipAug3D',
@@ -234,7 +231,7 @@ test_pipeline = [
 
 train_dataloader = dict(
     batch_size=batch_size,
-    num_workers=4,
+    num_workers=1,
     drop_last=True,
     sampler=dict(type='DefaultSampler', shuffle=True),
     dataset=dict(
@@ -270,7 +267,7 @@ test_dataloader = dict(
     drop_last=True,
     dataset=dict(
         type=dataset_type,
-        ann_file='nuscenes_mini_strpetr_infos_val.pkl',
+        ann_file='nuscenes_strpetr_infos_train.pkl',
         data_prefix=dict(
             pts='samples/LIDAR_TOP',
             CAM_FRONT='samples/CAM_FRONT',
@@ -296,7 +293,7 @@ val_dataloader = dict(
     drop_last=True,
     dataset=dict(
         type=dataset_type,
-        ann_file='nuscenes_mini_strpetr_infos_val.pkl',
+        ann_file='nuscenes_strpetr_infos_val.pkl',
         data_prefix=dict(
             pts='samples/LIDAR_TOP',
             CAM_FRONT='samples/CAM_FRONT',
@@ -323,7 +320,7 @@ val_dataloader = dict(
 val_evaluator = dict(
     type='CustomNuScenesMetric',
     data_root=data_root,
-    ann_file=data_root + 'nuscenes_mini_strpetr_infos_val.pkl',
+    ann_file=data_root + 'nuscenes_strpetr_infos_val.pkl',
     metric='bbox',
     backend_args=backend_args)
 test_evaluator = val_evaluator
@@ -339,20 +336,22 @@ optim_wrapper = dict(
     }),
     clip_grad=dict(max_norm=35, norm_type=2))
 
+
+num_iters = (28130 // batch_size) * num_epochs
 param_scheduler = [
     dict(
         type='LinearLR',
         start_factor=1.0 / 3,
         begin=0,
-        end=1000,
+        end=500,
         by_epoch=False),
     dict(
         type='CosineAnnealingLR',
         # TODO Figure out what T_max
-        begin=0,
-        end=num_epochs,
-        T_max=num_epochs,
-        by_epoch=True,
+        begin=500,
+        end=num_iters,
+        T_max=num_iters,
+        by_epoch=False,
     )
 ]
 

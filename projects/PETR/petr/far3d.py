@@ -261,26 +261,52 @@ class Far3D(MVXTwoStageDetector):
         Returns:
             dict: Losses of different branches.
         """
-
         #for key in data:
         #    if key != 'gt_depth':
         #        data[key] = data[key][:, 0]
-
         rec_img = inputs['imgs']
-
+        batch_img_metas = [ds.metainfo for ds in data_samples]
         rec_img_feats, depths = self.extract_feat(rec_img, True)
-        input['img_feats'] = rec_img_feats
 
         # TBA
-        losses = [] #self.forward_pts_train(inputs, batch_img_metas)
+        # collect info for forward_pts_train()
+        gt_bboxes_3d = []
+        gt_labels_3d = []
+        gt_bboxes = []
+        gt_labels = []
+        centers_2d = []
+        device = inputs['imgs'].device
+
+        for _, img_metas in enumerate(batch_img_metas):
+            # On same device. Why are they not on the same device as input img?
+            for i in range(len(img_metas['gt_bboxes'])):
+                img_metas['gt_bboxes'][i]        = img_metas['gt_bboxes'][i].to(device)
+                img_metas['gt_bboxes_labels'][i] = img_metas['gt_bboxes_labels'][i].to(device)
+                img_metas['centers_2d'][i]       = img_metas['centers_2d'][i].to(device)
+
+        for _, img_metas in enumerate(batch_img_metas):
+            gt_bboxes_3d.append(img_metas['gt_bboxes_3d'].to(device))
+            gt_labels_3d.append(img_metas['gt_labels_3d'].to(device))
+            gt_bboxes.append(img_metas['gt_bboxes'])
+            gt_labels.append(img_metas['gt_bboxes_labels'])
+            centers_2d.append(img_metas['centers_2d'])
+
+        losses = self.forward_pts_train(rec_img_feats, 
+                                        batch_img_metas, 
+                                        gt_bboxes_3d,
+                                        gt_labels_3d,
+                                        gt_bboxes,
+                                        gt_labels,
+                                        centers_2d,
+                                        depths)
 
         return losses
 
 
-    def extract_feat(self, img, return_detph=False):
+    def extract_feat(self, img, return_depth=False):
         """Extract features from images and points."""
         img_feats, depths = self.extract_img_feat(img, return_depth)
-        if return_detph:
+        if return_depth:
             return img_feats, depths
         return img_feats
 
@@ -412,8 +438,26 @@ class Far3D(MVXTwoStageDetector):
         Returns:
             dict: Losses of each branch.
         """
-        location = self.prepare_location(img_feats, img_metas)
+        #location  = self.prepare_location(img_feats, img_metas)
+        location  = None
+        outs_roi  = self.forward_roi_head(location, img_feats, img_metas)
+        bbox_dict = self.img_roi_head.predict_by_feat(outs_roi)  # {'bbox_list': BN x (Mi, 4), 'bbox_score_list': BN x (Mi, 1)}
+        bbox_roi = bbox_dict['bbox_list']
+        outs_roi.update(bbox_dict)
 
+        outs = self.pts_bbox_head(img_feats, img_metas, outs_roi)
+
+        loss_inputs = [gt_bboxes_3d, gt_labels_3d, outs]
+        losses = self.pts_bbox_head.loss_by_feat(*loss_inputs)
+
+        if self.with_img_roi_head:
+            loss2d_inputs = [gt_bboxes, gt_labels, centers2d, depths, outs_roi, img_metas]
+            losses2d = self.img_roi_head.loss_by_feat(*loss2d_inputs)
+            losses.update(losses2d) 
+
+        return losses
+
+        """
         if not requires_grad:
             self.eval()
             with torch.no_grad():
@@ -435,6 +479,7 @@ class Far3D(MVXTwoStageDetector):
             return losses
         else:
             return None
+        """
 
 
     def _forward(self, inputs=None, data_samples=None, mode=None, **kwargs):
