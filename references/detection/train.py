@@ -33,7 +33,23 @@ from engine import evaluate, train_one_epoch
 from group_by_aspect_ratio import create_aspect_ratio_groups, GroupedBatchSampler
 from torchvision.transforms import InterpolationMode
 from transforms import SimpleCopyPaste
+from typing import Any, Dict, List, Optional, Tuple
 
+from patch_utils import postprocess_ssd, postprocess_detections_ssd, _batched_nms_coordinate_tricks_custom
+
+import edgeai_torchmodelopt
+from torchvision.ops import boxes as box_ops
+from torchvision.ops.boxes import nms
+
+from torchvision.models.detection.roi_heads import paste_masks_in_image
+from torchvision.models.detection.transform import resize_boxes, resize_keypoints, GeneralizedRCNNTransform
+from torchvision.models.detection import _utils as det_utils
+from torchvision.models.detection.ssd import SSD
+
+
+box_ops._batched_nms_coordinate_trick = _batched_nms_coordinate_tricks_custom
+SSD.postprocess_detections = postprocess_detections_ssd
+GeneralizedRCNNTransform.postprocess = postprocess_ssd
 
 def copypaste_collate_fn(batch):
     copypaste = SimpleCopyPaste(blending=True, resize_interpolation=InterpolationMode.BILINEAR)
@@ -66,6 +82,20 @@ def get_transform(is_train, args):
         return lambda img, target: (trans(img), target)
     else:
         return presets.DetectionPresetEval(backend=args.backend, use_v2=args.use_v2)
+
+def export_model(args, model, epoch, model_name, output_names=None):
+    if args.quantization:
+        if hasattr(model, "convert"):
+            model = model.convert()
+        else:
+            model = torch.ao.quantization.quantize_fx.convert_fx(model)
+        #
+        export_device = 'cpu'
+    else:
+        export_device = next(model.parameters()).device
+    #
+    example_input = torch.rand((1,3,args.base_size,args.base_size), device=export_device)
+    utils.export_on_master(model, example_input, os.path.join(args.output_dir, model_name), output_names=output_names, opset_version=args.opset_version)
 
 
 def get_args_parser(add_help=True):
@@ -173,8 +203,32 @@ def get_args_parser(add_help=True):
         help="Use CopyPaste data augmentation. Works only with data-augmentation='lsj'.",
     )
 
+    
+    parser.add_argument(
+        "--base-size", default=520, type=int, help="the size used for validation (default: 520)"
+    )
+    parser.add_argument(
+        "--crop-size", default=480, type=int, help="the crop size used for training (default: 480)"
+    )
+
+    # options to create faster models
+    parser.add_argument("--model-surgery", "--lite-model", default=0, type=int, choices=edgeai_torchmodelopt.SyrgeryVersion.get_choices(), help="model surgery to create lite models")
+
+    parser.add_argument("--quantization", "--quantize", dest="quantization", default=0, type=int, choices=edgeai_torchmodelopt.QuantizationVersion.get_choices(), help="Quaantization Aware Training (QAT)")
+    parser.add_argument("--quantization-type", default=None, help="Actual Quaantization Flavour - applies only if quantization is enabled")
+
+    parser.add_argument("--pruning", default=0, help="Pruning/Sparsity")
+    parser.add_argument("--pruning-ratio", default=0.5, help="Pruning/Sparsity Factor - applies only of pruning is enabled")
+    parser.add_argument("--pruning-type", default=1, help="Pruning/Sparsity Type - applies only of pruning is enabled")
+
     parser.add_argument("--backend", default="PIL", type=str.lower, help="PIL or tensor - case insensitive")
     parser.add_argument("--use-v2", action="store_true", help="Use V2 transforms")
+    parser.add_argument("--opset-version", default=17, help="ONNX Opset version")
+    parser.add_argument("--train-epoch-size-factor", default=0.0, type=float,
+                        help="Training validation breaks after one iteration - for quick experimentation")
+    parser.add_argument("--val-epoch-size-factor", default=0.0, type=float,
+                        help="Training validation breaks after one iteration - for quick experimentation")
+    
 
     return parser
 
@@ -191,7 +245,13 @@ def main(args):
 
     if args.output_dir:
         utils.mkdir(args.output_dir)
+    
+    # create logger that tee writes to file
+    logger = edgeai_torchmodelopt.xnn.utils.TeeLogger(os.path.join(args.output_dir, 'run.log'))
 
+    # weights can be an external url or a pretrained enum in torhvision
+    (args.weights_url, args.weights_enum) = (args.weights, None) if edgeai_torchmodelopt.xnn.utils.is_url_or_file(args.weights) else (None, args.weights)
+    
     utils.init_distributed_mode(args)
     print(args)
 
@@ -245,6 +305,30 @@ def main(args):
     model = torchvision.models.get_model(
         args.model, weights=args.weights, weights_backbone=args.weights_backbone, num_classes=num_classes, **kwargs
     )
+    surgery_kwargs = dict()
+
+    ####
+    if args.model_surgery == edgeai_torchmodelopt.SyrgeryVersion.SURGERY_LEGACY:
+        model = edgeai_torchmodelopt.xmodelopt.surgery.v1.convert_to_lite_model(model, **surgery_kwargs)
+    elif args.model_surgery == edgeai_torchmodelopt.SyrgeryVersion.SURGERY_FX:
+        model = edgeai_torchmodelopt.xmodelopt.surgery.v2.convert_to_lite_fx(model)
+
+    if args.weights_url:
+        print(f"loading pretrained checkpoint from: {args.weights_url}")
+        edgeai_torchmodelopt.xnn.utils.load_weights(model, args.weights_url)
+
+    if args.pruning == edgeai_torchmodelopt.PruningVersion.PRUNING_LEGACY:
+        assert False, "Pruning is currently not supported in the legacy modules based method"
+    elif args.pruning == edgeai_torchmodelopt.PruningVersion.PRUNING_FX:
+        model = edgeai_torchmodelopt.xmodelopt.pruning.v2.PrunerModule(model)
+    
+    if args.quantization == edgeai_torchmodelopt.QuantizationVersion.QUANTIZATION_LEGACY:
+        dummy_input = torch.rand(1,3,args.base_size,args.base_size)
+        model = edgeai_torchmodelopt.xmodelopt.quantization.v1.QuantTrainModule(model, dummy_input=dummy_input, total_epochs=args.epochs)
+    elif args.quantization == edgeai_torchmodelopt.QuantizationVersion.QUANTIZATION_FX:
+        model = edgeai_torchmodelopt.xmodelopt.quantization.v2.QATFxModule(model, total_epochs=args.epochs, qconfig_type=args.quantization_type)
+
+
     model.to(device)
     if args.distributed and args.sync_bn:
         model = torch.nn.SyncBatchNorm.convert_sync_batchnorm(model)
@@ -306,7 +390,7 @@ def main(args):
     for epoch in range(args.start_epoch, args.epochs):
         if args.distributed:
             train_sampler.set_epoch(epoch)
-        train_one_epoch(model, optimizer, data_loader, device, epoch, args.print_freq, scaler)
+        # train_one_epoch(model, optimizer, data_loader, device, epoch, args.print_freq, scaler)
         lr_scheduler.step()
         if args.output_dir:
             checkpoint = {
@@ -320,13 +404,33 @@ def main(args):
                 checkpoint["scaler"] = scaler.state_dict()
             utils.save_on_master(checkpoint, os.path.join(args.output_dir, f"model_{epoch}.pth"))
             utils.save_on_master(checkpoint, os.path.join(args.output_dir, "checkpoint.pth"))
+            # export_model(args, model_without_ddp, epoch, model_name=f"{args.model}.onnx")
 
         # evaluate after every epoch
         evaluate(model, data_loader_test, device=device)
+        logger.close()
 
     total_time = time.time() - start_time
     total_time_str = str(datetime.timedelta(seconds=int(total_time)))
     print(f"Training time {total_time_str}")
+
+    # export onnx
+    cpu_model = model_without_ddp.cpu()
+    onnx_modelname = f"{args.model}.onnx"
+    save_file = os.path.join(args.output_dir, onnx_modelname)
+    export_model(args, cpu_model, epoch, model_name=onnx_modelname, output_names=["dets","labels"])
+
+    #simplify onnx model
+    import onnx
+    onnx_model = onnx.load(save_file)
+    # if args.simplify:
+    try:
+        import onnxsim
+        onnx_model, check = onnxsim.simplify(onnx_model)
+        assert check, 'assert check failed'
+    except Exception as e:
+        print(f'Simplify failure: {e}')
+    onnx.save(onnx_model, save_file)
 
 
 if __name__ == "__main__":
