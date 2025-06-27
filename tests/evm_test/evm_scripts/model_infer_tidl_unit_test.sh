@@ -3,6 +3,7 @@
 TEST_NAME=${TEST_NAME:-""}
 TEST_COMMAND=${TEST_COMMAND,""}
 TIMEOUT=${TIMEOUT,""}
+PYTEST_EXTRA_ARGS=${PYTEST_EXTRA_ARGS,""}
 
 cd ~/edgeai-benchmark/tests/tidl_unit
 
@@ -10,7 +11,8 @@ mkdir -p logs
 rm -rf logs/report*
 rm -rf ${TEST_NAME}.html
 
-PYTEST_ARGS="--run-infer -n 1 --exit-on-critical-error"
+PYTEST_ARGS="--run-infer -n 1 --exit-on-critical-error "
+PYTEST_ARGS+=$PYTEST_EXTRA_ARGS
 
 if [ "$TIMEOUT" != "" ]; then
     PYTEST_ARGS="${PYTEST_ARGS} --timeout ${TIMEOUT}"

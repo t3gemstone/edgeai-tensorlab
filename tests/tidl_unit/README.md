@@ -71,6 +71,7 @@ Allowed arguments:
 - ``--no-subprocess`` - Does not run tests as subprocess. Default: False
 - ``--exit-on-critical-error`` - Force stop pytest on critical error (Seg faults, OpenVX errors, etc.). Default: False
 - ``--timeout=*timeout*`` - Timeout per test run in seconds. Default: 300
+- ``--nmse-threshold=*nmse_threshold*`` - Normalized Mean Squared Error (NMSE) thresehold for inference output. Default: 0.5
 
 Along with arguments, you can also modify ``tidl_unit.yaml`` to set some compilation & inference options
 
@@ -114,6 +115,7 @@ Allowed arguments:
 - ``--run_infer=*run_infer*`` - Runs model inference. Allowed values are (0, 1). Default: 1
 - ``--tidl_offload=*tidl_offload*`` - Enable tidl-offload. Allowed values are (0, 1). Default: 1  
 - ``--tests=*test_names*`` - Comma separated test names to run. If not given, will run all test based on test_suite. Ex: ``--tests="<network_group_1>,<network_1>,<network_3>"``
+- ``--nmse_threshold=*nmse_threshold*`` - Normalized Mean Squared Error (NMSE) thresehold for inference output. Default: 0.5
 
 #### Compilation test 
 - Run compilation test for a single test case: 
