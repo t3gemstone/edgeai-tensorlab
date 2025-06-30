@@ -321,11 +321,11 @@ def download_tidl_tools_package_11_01(install_path, tools_version, tools_type):
 
     tidl_tools_type_suffix=("_gpu" if isinstance(tools_type,str) and "gpu" in tools_type else "")
     target_soc_download_urls = {
-        "TDA4VM": f"http://tidl-ta-01.dhcp.ti.com/tidl_tools/{11_01_00_00}/am68pa",
-        "AM68A": f"http://tidl-ta-01.dhcp.ti.com/tidl_tools/{11_01_00_00}/am68a",
-        "AM69A": f"http://tidl-ta-01.dhcp.ti.com/tidl_tools/{11_01_00_00}/am69a",
-        "AM67A": f"http://tidl-ta-01.dhcp.ti.com/tidl_tools/{11_01_00_00}/am67a",
-        "AM62A": f"http://tidl-ta-01.dhcp.ti.com/tidl_tools/{11_01_00_00}/am62a", # no update for AM62A in 11.0
+        "TDA4VM": f"http://tidl-ta-01.dhcp.ti.com/tidl_tools/11_01_00_00/am68pa",
+        "AM68A": f"http://tidl-ta-01.dhcp.ti.com/tidl_tools/11_01_00_00/am68a",
+        "AM69A": f"http://tidl-ta-01.dhcp.ti.com/tidl_tools/11_01_00_00/am69a",
+        "AM67A": f"http://tidl-ta-01.dhcp.ti.com/tidl_tools/11_01_00_00/am67a",
+        "AM62A": f"http://tidl-ta-01.dhcp.ti.com/tidl_tools/11_01_00_00/am62a", # no update for AM62A in 11.0
     }
     tidl_version_dict = dict(version=tidl_tools_version_name, release_label=tidl_tools_release_label,
                              release_id=tidl_tools_release_id, tools_type=tidl_tools_type_suffix,
