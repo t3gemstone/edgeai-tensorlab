@@ -31,7 +31,7 @@
 ######################################################################
 # change default tidl_tools version if needed
 # examples: 11.0 10.1 10.0
-TIDL_TOOLS_VERSION=${TIDL_TOOLS_VERSION:-"11.0"}
+TIDL_TOOLS_VERSION=${TIDL_TOOLS_VERSION:-"11.1"}
 echo "TIDL_TOOLS_VERSION=${TIDL_TOOLS_VERSION}"
 
 #######################################################################
