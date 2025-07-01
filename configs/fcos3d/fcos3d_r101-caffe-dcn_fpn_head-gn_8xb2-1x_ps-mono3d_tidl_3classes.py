@@ -36,6 +36,10 @@ default_hooks = dict(
     checkpoint=dict(interval=1, max_keep_ckpts=2),
 )
 
+custom_hooks = [
+    dict(type='MlflowHook')
+]
+
 backend_args = None
 
 train_pipeline = [
@@ -92,7 +96,7 @@ param_scheduler = [
         gamma=0.1)
 ]
 # TODO remove this
-load_from = '/data/ssd/files/a0507161/edgeai/edgeai-mmdetection3d/work_dirs/fcos3d_r101-caffe-dcn_fpn_head-gn_8xb2-1x_ps-mono3d_tidl_3classes/epoch_5.pth'
+load_from = 'checkpoints/fcos3d/fcos3d_r101_caffe_fpn_gn-head_dcn_2x8_1x_ps-mono3d_finetune_20210717_095645-8d806dc2_adjusted_3classes.pth'
 # load_from = './work_dirs/fcos3d_r101-caffe-dcn_fpn_head-gn_8xb2-1x_ps-mono3d_tidl_2classes/epoch_6.pth'
 preload_checkpoint=1
 find_unused_parameters = True
