@@ -325,8 +325,8 @@ def add_frame(sample_data, nusc, l2e_RT, e2g_RT, out_dir):
 def generate_camera_sweeps(info, nusc, out_dir):
     # Nummber of previous key frames
     # Nummber of sweep frames between two key frame
-    num_prev = 5
-    num_sweep = 5
+    num_prev = 1
+    num_sweep = 0
 
     camera_types = [
         'CAM_FRONT',

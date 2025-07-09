@@ -29,6 +29,7 @@ metainfo = dict(classes=class_names)
 
 # If True, reuse image feature map from the previous frame
 optimized_inference=True
+sweep_range=[1,2]
 
 input_modality = dict(use_camera=True)
 model = dict(
@@ -37,6 +38,7 @@ model = dict(
     img_feat_size = [[6, 256, 20, 50], [6, 256, 10, 25]],
     save_onnx_model=False,
     optimized_inference=optimized_inference,
+    sweep_range=sweep_range,
     data_preprocessor=dict(
         type='Det3DDataPreprocessor',
         mean=[103.530, 116.280, 123.675],
@@ -192,7 +194,7 @@ train_pipeline = [
         to_float32=True,
         pad_empty_sweeps=True,
         test_mode=False,
-        sweep_range=[3,27]),
+        sweep_range=sweep_range),
     dict(
         type='LoadAnnotations3D',
         with_bbox_3d=True,

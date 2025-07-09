@@ -34,6 +34,7 @@ class PETR(MVXTwoStageDetector):
                  use_grid_mask=False,
                  save_onnx_model=False,
                  optimized_inference=False,
+                 sweep_range=[1, 2],
                  quantized_model=False,
                  pts_voxel_encoder=None,
                  pts_middle_encoder=None,
@@ -63,6 +64,7 @@ class PETR(MVXTwoStageDetector):
         # for onnx model export
         self.save_onnx_model     = save_onnx_model
         self.optimized_inference = optimized_inference
+        self.sweep_range         = sweep_range
         self.quantized_model     = quantized_model
         self.img_feat_size       = img_feat_size
         self.version             = version
@@ -296,6 +298,8 @@ class PETR(MVXTwoStageDetector):
         e2g_p = np.array(prev_img_meta['ego2global'])
         l2e_p = np.array(prev_img_meta['lidar2ego'])
 
+        mean_time = (self.sweep_range[0] + self.sweep_range[1]) / 2.0 * 0.083
+
         for i in range(len(img_meta['lidar2cam'])):
             l2c_p = np.array(prev_img_meta['lidar2cam'][i])
             # Transform [R|t] from the (temporal) previous camera  to the current lidar
@@ -308,7 +312,10 @@ class PETR(MVXTwoStageDetector):
             img_meta['cam2img'].append(prev_img_meta['cam2img'][i])
             img_meta['lidar2cam'] = np.concatenate((img_meta['lidar2cam'], np.expand_dims(lidar2cam_p_c, axis=0)), axis=0)
             #img_meta['lidar2img'].append(lidar2img_p_c)
-            img_meta['delta_timestamp'].append(img_meta['timestamp'] - prev_img_meta['img_timestamp'][i])
+            if img_meta['timestamp'] == prev_img_meta['timestamp']:
+                img_meta['delta_timestamp'].append(img_meta['timestamp'] - prev_img_meta['img_timestamp'][i] + mean_time)
+            else:
+                img_meta['delta_timestamp'].append(img_meta['timestamp'] - prev_img_meta['img_timestamp'][i])
 
         return img_meta
 
@@ -319,10 +326,6 @@ class PETR(MVXTwoStageDetector):
             cur_sample_idx = img_meta['sample_idx']
             if queue.qsize() == 0 or \
                 img_meta['scene_token'] != memory[cur_sample_idx-1]['img_meta']['scene_token']:
-
-                #prev_feat = []
-                #prev_feat.append(torch.zeros([1]+img_feat_size[0], dtype=img.dtype, device=img.device))
-                #prev_feat.append(torch.zeros([1]+img_feat_size[1], dtype=img.dtype, device=img.device))
                 prev_feat = 0
                 prev_img_meta = copy.deepcopy(img_meta)
             else:
