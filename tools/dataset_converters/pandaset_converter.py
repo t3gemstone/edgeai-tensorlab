@@ -59,7 +59,7 @@ def convert_bbox_to_corners_for_globals(bbox):
     new_yaw = yaw+np.pi/2
     if new_yaw > np.pi:
         new_yaw -= 2*np.pi
-    if new_yaw < np.pi:
+    if new_yaw < -np.pi:
         new_yaw += 2*np.pi
     return convert_bbox_to_corners_for_lidar([ x, y, z, l, w, h, new_yaw])
 
@@ -270,7 +270,7 @@ def generate_camera_sweeps(info, seq, frame_idx, data_list):
     for cam in CAMERA_NAMES:
         current_cams[cam] = info['images'][cam]
     
-    sweep_list = []
+    sweep_lists = []
     for i in range(num_prev):
         if (frame_idx-i) <= 0:
             break
@@ -281,7 +281,9 @@ def generate_camera_sweeps(info, seq, frame_idx, data_list):
             sweep_cam = add_frame(prev_cam)
             current_cams[cam] = prev_cam
             sweep_cams[cam] = sweep_cam
-        sweep_list.append(sweep_cams)
+        sweep_lists.append(sweep_cams)
+    info['camera_sweeps'] = sweep_lists
+    return info
 
 
 def create_frame_dict(seq, scene_id, frame_idx, all_velocities, cam2img, data_list, enable_petrv2=True, enable_strpetr=True):
@@ -292,35 +294,11 @@ def create_frame_dict(seq, scene_id, frame_idx, all_velocities, cam2img, data_li
     timestamp = seq.timestamps[frame_idx]
     gps = seq.gps[frame_idx]
 
-    # lidar = ego 
-    # all coordinates are in global based coordinate system
+
     lidar_file = seq.lidar._data_structure[frame_idx]
     lidar2global = (ps.geometry._heading_position_to_mat(**seq.lidar.poses[frame_idx]))
     lidar_timestamp = seq.lidar.timestamps[frame_idx]
-    lidar2lidar90 = np.array(
-        [[ 0,-1, 0, 0],
-         [ 1, 0, 0, 0],
-         [ 0, 0, 1, 0],
-         [ 0, 0, 0, 1]]
-    )
-    lidar902ego = np.eye(4) # lidar90 = ego 
-    
-    # Current frame Lidar
-    
-    #                 up z    x left 
-    #                 ^   ^
-    #                 |  /
-    #                 | /
-    #  back y <------ 0
-    # required lidar orientation(lidar90)
 
-    #                             up z    x front (yaw=0)
-    #                             ^   ^
-    #                             |  /
-    #                             | /
-    # (yaw=0.5*pi) left y <------ 0
-    
-    #lidar2ego = lidar902ego @ lidar2lidar90
     lidar2ego = np.eye(4)
     ego2global = lidar2global @ np.linalg.inv(lidar2ego)
     
@@ -344,8 +322,6 @@ def create_frame_dict(seq, scene_id, frame_idx, all_velocities, cam2img, data_li
     valid_flags, lidar_points_within_bboxes = compute_valid_flag_for_bboxes(filtered_cuboids, seq.lidar.data[frame_idx])
     valid_flags = dict(zip(filtered_cuboids[:,0].tolist(),valid_flags))
     num_lidar_points = [len(points) for i,points in enumerate(lidar_points_within_bboxes) ]
-    # filtered_cuboids = filtered_cuboids[valid_flags]
-    # world_velocities = [world_velocities[i] for i in range(len(valid_flags)) if valid_flags[i]]
     world_velocities = np.array(world_velocities)
 
     lidar_velocities = (np.linalg.inv(lidar2global[:3,:3]) @ world_velocities.T).T.tolist()
@@ -357,21 +333,11 @@ def create_frame_dict(seq, scene_id, frame_idx, all_velocities, cam2img, data_li
     ego_bboxes = []
     for cuboid in filtered_cuboids.tolist():
         bbox = cuboid[5:11] + [cuboid[2]]
-        # print((cuboid),(bbox),sep='\n')
         corners = convert_bbox_to_corners_for_globals(bbox)
-        # we have to store in lidar90 reference not in lidar refrence, of current frame
         lidar_corners = (np.linalg.inv(lidar2global) @ np.hstack([corners, np.ones((corners.shape[0], 1))]).T).T[:,:3]
         lidar_bboxes.append(convert_corners_to_bbox_for_lidar_box(lidar_corners))
         ego_corners = (np.linalg.inv(ego2global) @ np.hstack([corners, np.ones((corners.shape[0], 1))]).T).T[:,:3]
         ego_bboxes.append(convert_corners_to_bbox_for_lidar_box(ego_corners))
-    """
-    for cuboid in filtered_cuboids.tolist():
-        bbox = cuboid[5:11] + [cuboid[2]]
-        bbox_in_lidar = convert_bbox_to_lidar(bbox, np.linalg.inv(lidar2global))
-        bbox_in_lidar = bbox_in_lidar.center.tolist() + bbox_in_lidar.wlh[[1, 0, 2]].tolist() + \
-             [bbox_in_lidar.orientation.yaw_pitch_roll[0]]
-        lidar_bboxes.append(bbox_in_lidar)
-    """
 
     available_attrs = [attr for attr in ALL_ATTRIBUTES if f'attributes.{attr}' in cuboids.columns]
     columns_names = list(cuboids.columns)
@@ -656,6 +622,6 @@ def main(args=None):
 if __name__ == '__main__':
 
     # from edgeai-mmdetection3d path
-    # main(['--dataset-path', './data/pandaset/', '--output-dir', './data/pandaset/'])
+    # main(['--dataset-path', './data/pandaset/', '--output-dir', './data/pandaset/', '--petrv2', '--strpetr'])
     # from any path with correct path to dataset
     main()
