@@ -220,7 +220,7 @@ train_dataloader = dict(
     batch_size=batch_size,
     num_workers=4,
     drop_last=True,
-    sampler=dict(type='DefaultSampler', shuffle=True),
+    sampler=dict(type='GroupSampler', shuffle=True),
     dataset=dict(
         type=dataset_type,
         ann_file='nuscenes_strpetr_infos_train.pkl',
@@ -245,6 +245,7 @@ train_dataloader = dict(
         test_mode=False,
         modality=input_modality,
         use_valid_flag=True,
+        batch_size=batch_size, # Needed for GroupSampler
         backend_args=backend_args))
 
 test_dataloader = dict(
@@ -325,7 +326,6 @@ optim_wrapper = dict(
     }),
     clip_grad=dict(max_norm=35, norm_type=2))
 
-num_iters = (28130 // batch_size) * num_epochs
 param_scheduler = [
     dict(
         type='LinearLR',
@@ -335,12 +335,10 @@ param_scheduler = [
         by_epoch=False),
     dict(
         type='CosineAnnealingLR',
-        # TODO Figure out what T_max
-        begin=500,
-        end=num_iters,
-        T_max=num_iters,
-        by_epoch=False,
-    )
+        begin=0,
+        end=num_epochs,
+        T_max=num_epochs,
+        by_epoch=True)
 ]
 
 #evaluation = dict(interval=num_iters_per_epoch*num_epochs, pipeline=test_pipeline)
@@ -353,5 +351,8 @@ default_hooks = dict(
     checkpoint=dict(
         type='CheckpointHook', interval=1, max_keep_ckpts=4, save_last=True))
 
+custom_hooks = [
+    dict(type='MlflowHook')
+]
 #load_from = './checkpoints/streampetr/stream_petr_r50_flash_704_bs2_seq_428q_nui_60e.pth'
 resume_from = None

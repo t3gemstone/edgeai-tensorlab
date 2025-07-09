@@ -173,12 +173,14 @@ class StreamNuScenesDataset(NuScenesDataset):
     This datset only add camera intrinsics and extrinsics to the results.
     """
 
-    def __init__(self, collect_keys, seq_mode=False, seq_split_num=1, num_frame_losses=1, queue_length=8, random_length=0, *args, **kwargs):
+    def __init__(self, collect_keys, seq_mode=False, seq_split_num=1, num_frame_losses=1, queue_length=8, random_length=0, 
+                 batch_size = 1, *args, **kwargs):
         # Disable "serialize_data" for _set_sequence_group_flag
         # It will slow down data loading for multiple workers
         kwargs["serialize_data"] = False
         super().__init__(*args, **kwargs)
         self.queue_length = queue_length
+        self.batch_size = batch_size
         self.collect_keys = collect_keys
         self.random_length = random_length
         self.num_frame_losses = num_frame_losses
