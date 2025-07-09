@@ -1,5 +1,30 @@
 <hr>
 
+
+<hr>
+
+## Release 11.0
+* Release name: **11.0**
+* Git branch: **r11.0**
+* tidl_tools version: **11_00_08_00**
+* [edgeai-tidl-tools](https://github.com/TexasInstruments/edgeai-tidl-tools) git tag: [11_00_08_00](https://github.com/TexasInstruments/edgeai-tidl-tools/releases/tag/11_00_08_00)
+* Date: 2025 May - 2025 July
+
+### New models in edgeai-modelzoo / edgeai-benchmark
+We are in the process of adding support for several new models. Configs for models verified in this release are in this repository and the models are available in edgeai-modelzoo. The following new models have been verified:
+
+| Model name                    | Model Type                            | Source repository |
+|-------------------------------|---------------------------------------|------------------------|
+| rtmdet lite version (multiple flavours) | Object Detection                      | edgeai-mmdetection     |
+| fastbev (without temporal)    | Multi-view 3DOD for ADAS                      | edgeai-mmdetection3d     |
+| bevformer_tiny    | Multi-view 3DOD for ADAS                      | edgeai-mmdetection3d     |
+
+Note: The 3DOD models are trained with **pandaset dataset** (which is a Multi-view, Multi-modality ADAS / Automous Driving Dataset). edgeai-mmdetection3d and edgeai-benchmark now supports pandaset dataset. See more details of this dataset in edgeai-mmdetection3d.
+
+
+
+<hr>
+
 ## Release 10.1
 * Release name: **10.1**
 * git branch: **r10.1**
@@ -8,12 +33,12 @@
 * Date: 2024 Dec ~ 2025 March
 
 ### edgeai-benchmark core runtime apis
-[2025-03-29 update] edgai-benchmark/edgeai_benchmark/core contains simplified wrapper apis that are easy to use and understand over the core runtimes. See edgeai-benchmark/run_tutorials_script_pc.sh and edgeai-benchmark/tutorials to understand the usage of these core apis.
+[2025-03-29 update] edgai-benchmark/edgeai_benchmark/core contains simplified wrapper apis over the core runtimes that are easy to use and understand. See edgeai-benchmark/run_tutorials_script_pc.sh and edgeai-benchmark/tutorials to understand the usage of these core apis.
 
-### New models edgeai-benchmark / edgeai-modelzoo
-We are in the process of adding support for several new models. Configs for models verified in this release are in this repository and the models are available in edgeai-modelzoo. The following new models have been compiled using edgeai-benchmark and verified:
+### New models in edgeai-modelzoo / edgeai-benchmark
+We are in the process of adding support for several new models. Configs for models verified in this release are in this repository and the models are available in edgeai-modelzoo. The following new models have been verified:
 
-| Model name                    | Model Type                            | Source repository      |
+| Model name                    | Model Type                            | Source repository |
 |-------------------------------|---------------------------------------|------------------------|
 | swin_tiny_patch4_window7_224  | Image Clasifiation, Transformer       | edgeai-hf-transformers |
 | deit_tiny_patch16_224         | Image Clasifiation, Transformer       | edgeai-hf-transformers |
@@ -33,11 +58,13 @@ We are in the process of adding support for several new models. Configs for mode
 | YOLOv9       | Object Detection                      | edgeai-mmdetection     |
 | YOLOXPose                     | Keypoint detection / Human Pose       | edgeai-mmpose          |
 
+**More details are in the [Release Notes](./docs/release_notes.md)**
+
 ### Tech reports
 New Tech report on 3D Object Detection - see the section on "Tech Reports"
 
 ### Deprecations
-edgeai-yolox is being deprecated - use [edgeai-mmpose](edgeai-mmpose) for Keypoint detection and [edgeai-mmdetection](edgeai-mmdetection) for Object Detection. The previous version of edgeai-yolox is still available in the previous branches of this repository or [here](https://github.com/TexasInstruments/edgeai-yolox)
+edgeai-yolox repository is being deprecated - use [edgeai-mmpose](edgeai-mmpose) for Keypoint detection and [edgeai-mmdetection](edgeai-mmdetection) for detection YOLOX models. The previous version of edgeai-yolox is still available in the previous branches of this repository or [here](https://github.com/TexasInstruments/edgeai-yolox)
 
 <hr>
 
