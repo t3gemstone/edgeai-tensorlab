@@ -411,8 +411,11 @@ def pandaset_data_prep(root_path,
                        info_prefix,
                        version,
                        dataset_name,
-                       out_dir):
-    pandaset_converter.create_pandaset_infos(root_path, info_prefix, version, dataset_name, out_dir)
+                       out_dir,
+                       enable_petrv2=False,
+                       enable_strpetr=False
+                       ):
+    pandaset_converter.create_pandaset_infos(root_path, info_prefix, version, dataset_name, out_dir, enable_petrv2, enable_strpetr)
 
 
 parser = argparse.ArgumentParser(description='Data converter arg parser')
@@ -480,7 +483,8 @@ parser.add_argument(
     action='store_true',
     help='''Whether to add info needed for StreamPETR in a pickle file''')
 
-args = parser.parse_args()
+# args = parser.parse_args()
+args = parser.parse_args(['nuscenes','--root-path','data/nuscenes','--out-dir','/data/nuscenes','--extra-tag','nuscenes','--petrv2'])
 
 if __name__ == '__main__':
     from mmengine.registry import init_default_scope
@@ -566,7 +570,9 @@ if __name__ == '__main__':
             info_prefix=args.extra_tag,
             version=args.version,
             dataset_name='PandasetDataset',
-            out_dir=args.out_dir)
+            out_dir=args.out_dir,
+            enable_petrv2=args.petrv2,
+            enable_strpetr=args.strpetr)
     elif args.dataset == 'waymo':
         waymo_data_prep(
             root_path=args.root_path,

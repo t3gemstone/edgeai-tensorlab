@@ -230,7 +230,61 @@ def get_gt_bevdet(instances, ego_bboxes, ego_velocities):
     return gt_boxes, gt_labels
 
 
-def create_frame_dict(seq, scene_id, frame_idx, all_velocities, cam2img):
+def generate_camera_sweeps(info, seq, frame_idx, data_list):
+    num_prev = 5
+    num_sweep = 0 # pandaset does't have non-keyframes
+    
+    l2g = info['lidar_points']['lidar2global']
+    l2g = np.array(l2g)
+    
+    def add_frame(prev_cam):
+        sweep_cam = dict()
+        sweep_cam['is_key_frame'] = True
+        sweep_cam['data_path'] = prev_cam['img_path']
+        sweep_cam['type'] = 'camera'
+        sweep_cam['timestamp'] = prev_cam['timestamp']
+        sweep_cam['sample_data_token'] = prev_cam['sample_data_token']
+        sweep_cam['cam_intrinsic'] = prev_cam['cam2img']
+        
+        c2g_s = prev_cam['cam2global']
+        
+        RT_pc2cl = np.linalg.inv(l2g) @ c2g_s
+        sweep_cam['sensor2lidar_rotation'] = RT_pc2cl[0:3, 0:3]
+        sweep_cam['sensor2lidar_translation'] = RT_pc2cl[0:3, 3]
+        cl2pc = np.linalg.inv(RT_pc2cl)
+        
+        intrinsic = np.array(sweep_cam['cam_intrinsic'])
+        viewpad = np.eye(4)
+        viewpad[:intrinsic.shape[0], :intrinsic.shape[1]] = intrinsic
+        cl2pi = (viewpad @ cl2pc)
+        
+        sweep_cam['cam2img'] = intrinsic.astype(np.float32).tolist()
+        sweep_cam['lidar2cam'] = cl2pc.astype(np.float32).tolist()
+        sweep_cam['lidar2img'] = cl2pi.astype(np.float32).tolist()
+
+        pop_keys = ['cam_intrinsic', 'sensor2lidar_rotation', 'sensor2lidar_translation']
+        [sweep_cam.pop(k) for k in pop_keys if k in sweep_cam]
+        return sweep_cam
+    
+    current_cams = dict()
+    for cam in CAMERA_NAMES:
+        current_cams[cam] = info['images'][cam]
+    
+    sweep_list = []
+    for i in range(num_prev):
+        if (frame_idx-i) <= 0:
+            break
+        prev = data_list[-i-1]
+        sweep_cams = dict()
+        for cam in CAMERA_NAMES:
+            prev_cam = prev['images'][cam]
+            sweep_cam = add_frame(prev_cam)
+            current_cams[cam] = prev_cam
+            sweep_cams[cam] = sweep_cam
+        sweep_list.append(sweep_cams)
+
+
+def create_frame_dict(seq, scene_id, frame_idx, all_velocities, cam2img, data_list, enable_petrv2=True, enable_strpetr=True):
     scene_token = scene_id
     frame_token = f'{scene_id}_{frame_idx:02}'
     prev = (frame_idx-1) if frame_idx > 0 else None
@@ -439,11 +493,51 @@ def create_frame_dict(seq, scene_id, frame_idx, all_velocities, cam2img):
     # For BEVDet temporal info
     ann_infos = get_gt_bevdet(instances, ego_bboxes, ego_velocities)
     frame_dict.update(dict(ann_infos=ann_infos))
+    
+    if enable_petrv2:
+        frame_dict = generate_camera_sweeps(frame_dict, seq, frame_idx, data_list)
 
+    if enable_strpetr:
+        gt_2dbboxes_cams = []
+        gt_3dbboxes_cams = []
+        gt_2dlabels_cams = []
+        center2d_cams = []
+        depths_cams = []
+        gt_2dbboxes_ignore_cams = []
+        for cam in CAMERA_NAMES:
+            gt_2dbboxes = []
+            gt_3dbboxes_cam = []
+            gt_2dlabels = []
+            center2d = []
+            depths = []
+            gt_2dbboxes_ignore = []
+            for info in cam_instances[cam]:
+                gt_2dbboxes.append(info['bbox'])
+                gt_3dbboxes_cam.append(info['bbox_3d'])
+                gt_2dlabels.append(info['bbox_label'])
+                center2d.append(info['center_2d'])
+                depths.append(info['depth'])
+                if info['bbox_3d_isvalid']:
+                    gt_2dbboxes_ignore.append(info['bbox'])
+            gt_2dbboxes_cams.append(np.array(gt_2dbboxes, dtype = np.float32))
+            gt_3dbboxes_cams.append(np.array(gt_3dbboxes_cam, dtype = np.float32))
+            gt_2dlabels_cams.append(np.array(gt_2dlabels, dtype = np.int64))
+            center2d_cams.append(np.array(center2d, dtype = np.float32))
+            depths_cams.append(np.array(depths, dtype = np.float32))
+            gt_2dbboxes_ignore_cams.append(np.array(gt_2dbboxes_ignore, dtype = np.float32))
+        frame_dict.update(dict(
+            gt_2dbboxes_cams = gt_2dbboxes_cams,
+            gt_3dbboxes_cams = gt_3dbboxes_cams,
+            gt_2dlabels_cams = gt_2dlabels_cams,
+            center2d_cams = center2d_cams,
+            depths_cams = depths_cams,
+            gt_2dbboxes_ignore_cams = gt_2dbboxes_ignore_cams
+        ))
+    
     return frame_dict
 
 
-def create_datalist_per_scene(scene_id, dataset):
+def create_datalist_per_scene(scene_id, dataset, enable_petrv2=True, enable_strpetr=True):
     data_list = []
     seq = dataset[scene_id]
     seq.load()
@@ -455,7 +549,7 @@ def create_datalist_per_scene(scene_id, dataset):
     with tqdm.tqdm(total=len(seq.lidar._data_structure)) as pbar:
 
         for frame_idx in range(len(seq.lidar._data_structure)):
-            frame_dict = create_frame_dict(seq, scene_id, frame_idx, all_velocities, cam2img)
+            frame_dict = create_frame_dict(seq, scene_id, frame_idx, all_velocities, cam2img, data_list, enable_petrv2=enable_petrv2, enable_strpetr=enable_strpetr)
             data_list.append(copy.deepcopy(frame_dict))
             delete_obj(frame_dict)
             pbar.update()
@@ -478,7 +572,7 @@ def create_datalist_per_scene(scene_id, dataset):
     return data_list
 
 
-def create_pickle_file( dataset, scenes, output_dir=None, info_prefix=None, version=None, dataset_name=None, train_split=True):
+def create_pickle_file( dataset, scenes, output_dir=None, info_prefix=None, version=None, dataset_name=None, train_split=True, enable_petrv2=True, enable_strpetr=True):
     output_dir = output_dir or os.getcwd()
     version = version or 'v1.0'
     dataset_name = dataset_name or 'PandaSetDataset'
@@ -498,7 +592,7 @@ def create_pickle_file( dataset, scenes, output_dir=None, info_prefix=None, vers
 
     for i, scene_id in enumerate(scenes):
         print(f"Scene({i+1}/{len(scenes)}): ",end='')
-        data_list.extend(create_datalist_per_scene(scene_id, dataset))
+        data_list.extend(create_datalist_per_scene(scene_id, dataset, enable_petrv2=enable_petrv2, enable_strpetr=enable_strpetr))
 
     for i, frame in enumerate(data_list):
         frame['sample_idx'] = i
@@ -509,7 +603,7 @@ def create_pickle_file( dataset, scenes, output_dir=None, info_prefix=None, vers
 
 
 
-def create_pickle_files(dataset_path, output_dir, info_prefix, version, dataset_name, with_semseg=False, fixed_split=True, train_split=0.80):
+def create_pickle_files(dataset_path, output_dir, info_prefix, version, dataset_name, with_semseg=False, fixed_split=True, train_split=0.80, enable_petrv2=True, enable_strpetr=True):
     dataset = ps.DataSet(dataset_path)
     semseg_scenes = dataset.sequences(with_semseg=with_semseg)
     scenes = dataset.sequences()
@@ -530,16 +624,19 @@ def create_pickle_files(dataset_path, output_dir, info_prefix, version, dataset_
         pass
     else:
         print(f"Creating a test dataset of {len(test_scenes)} scenes")
-        create_pickle_file(dataset, test_scenes, output_dir, info_prefix, version, dataset_name, train_split=False)
+        create_pickle_file(dataset, test_scenes, output_dir, info_prefix, version, dataset_name, train_split=False, enable_petrv2=enable_petrv2, enable_strpetr=enable_strpetr)
         print(f"Creating a train dataset of {len(train_scenes)} scenes")
-        create_pickle_file(dataset, train_scenes, output_dir, info_prefix, version, dataset_name)
+        create_pickle_file(dataset, train_scenes, output_dir, info_prefix, version, dataset_name, enable_petrv2=enable_petrv2, enable_strpetr=enable_strpetr)
 
 def create_pandaset_infos(root_path,
                           info_prefix,
                           version,
                           dataset_name,
-                          out_dir):
-    create_pickle_files(root_path, out_dir, info_prefix, version, dataset_name)
+                          out_dir,
+                          enable_petrv2=True,
+                          enable_strpetr=True
+                          ):
+    create_pickle_files(root_path, out_dir, info_prefix, version, dataset_name,enable_petrv2=enable_petrv2, enable_strpetr=enable_strpetr)
     
 
 def main(args=None):
@@ -551,8 +648,10 @@ def main(args=None):
     parser.add_argument('--dataset-name', type=str, default='PandaSetDataset')
     parser.add_argument('--with-semseg',  action='store_true')
     parser.add_argument('--train-split', type=float, default=0.75)
+    parser.add_argument('--petrv2', action='store_true')
+    parser.add_argument('--strpetr', action='store_true')
     args = parser.parse_args() if args is None else parser.parse_args(args)
-    create_pickle_files(args.dataset_path, args.output_dir, args.info_prefix, args.version, args.dataset_name, args.with_semseg, args.train_split)
+    create_pickle_files(args.dataset_path, args.output_dir, args.info_prefix, args.version, args.dataset_name, args.with_semseg, True, args.train_split, enable_petrv2=args.petrv2, enable_strpetr=args.strpetr)
 
 if __name__ == '__main__':
 
