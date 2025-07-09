@@ -25,6 +25,8 @@ from .transforms import (AffineResize, BackgroundPointsFilter, GlobalAlignment,
                          RandomShiftScale, Resize3D, VoxelBasedPointSampler)
 from .utils import get_loading_pipeline
 from .waymo_dataset import WaymoDataset
+from .sampler.group_sampler import GroupSampler
+
 
 __all__ = [
     'KittiDataset', 'CBGSDataset', 'NuScenesDataset', 'PandaSetDataset', 'LyftDataset',
@@ -38,5 +40,5 @@ __all__ = [
     'LoadPointsFromMultiSweeps', 'WaymoDataset', 'BackgroundPointsFilter',
     'VoxelBasedPointSampler', 'get_loading_pipeline', 'RandomDropPointsColor',
     'RandomJitterPoints', 'ObjectNameFilter', 'AffineResize',
-    'RandomShiftScale', 'LoadPointsFromDict', 'Resize3D', 'RandomResize3D',
+    'RandomShiftScale', 'LoadPointsFromDict', 'Resize3D', 'RandomResize3D'
 ]

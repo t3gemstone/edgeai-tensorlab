@@ -233,7 +233,7 @@ train_dataloader = dict(
     batch_size=batch_size,
     num_workers=1,
     drop_last=True,
-    sampler=dict(type='DefaultSampler', shuffle=True),
+    sampler=dict(type='GroupSampler', shuffle=True),
     dataset=dict(
         type=dataset_type,
         ann_file='nuscenes_strpetr_infos_train.pkl',
@@ -258,6 +258,7 @@ train_dataloader = dict(
         test_mode=False,
         use_valid_flag=False,
         modality=input_modality,
+        batch_size=batch_size, # Needed for GroupSampler
         backend_args=backend_args))
 
 test_dataloader = dict(
