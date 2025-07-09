@@ -483,8 +483,8 @@ parser.add_argument(
     action='store_true',
     help='''Whether to add info needed for StreamPETR in a pickle file''')
 
-# args = parser.parse_args()
-args = parser.parse_args(['nuscenes','--root-path','data/nuscenes','--out-dir','/data/nuscenes','--extra-tag','nuscenes','--petrv2'])
+args = parser.parse_args()
+# args = parser.parse_args(['nuscenes','--root-path','data/nuscenes','--out-dir','/data/nuscenes','--extra-tag','nuscenes','--petrv2'])
 
 if __name__ == '__main__':
     from mmengine.registry import init_default_scope
