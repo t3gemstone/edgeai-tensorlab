@@ -251,7 +251,12 @@ def perform_tidl_unit_oneprocess(tidl_offload : bool, run_infer : bool,  flow_co
         print()
         
         max_nmse = tidl_unit_dataset([results_list])['max_nmse']
-        print(f"MAX_NMSE: {max_nmse}")
+
+        if max_nmse == None:
+            print("MAX_NMSE: None")
+        else:
+            print("MAX_NMSE: {:.7f}".format(max_nmse))
+
         if max_nmse == None:
             del runtime_wrapper
             pytest.fail(f" Could not calculate NMSE")
