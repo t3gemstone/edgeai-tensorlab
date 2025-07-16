@@ -50,6 +50,7 @@ parser.add_argument('--session_type_dict', help='Optional argument to set runtim
 
 # TIDL_UNIT_TEST specific arguments
 parser.add_argument('--operators', help='Space separated operators to test in TIDL_UNIT_TEST', type=str, default=None)
+parser.add_argument('--extra_args', help='Extra arguments for pytest in TIDL_UNIT_TEST', type=str, default="")
 
 args = parser.parse_args()
 
@@ -338,6 +339,6 @@ elif (args.test_suite == "TIDL_UNIT_TEST"):
 
 
     if status:
-        tidl_unit_test_evm.run_tests(test_list=TEST_LIST, timeout=args.evm_timeout)
+        tidl_unit_test_evm.run_tests(test_list=TEST_LIST, extra_args=args.extra_args, timeout=args.evm_timeout)
     else:
         sys.exit(-1)

@@ -16,6 +16,7 @@ echo \
     --save_model_artifacts      Whether to save compiled artifacts or not. Allowed values are (0,1). Default=0
     --save_model_artifacts_dir  Path to save model artifacts if save_model_artifacts is 1. Default is work_dirs/modelartifacts
     --temp_buffer_dir           Path to redirect temporary buffers for x86 runs. Default is /dev/shm
+    --nmse_threshold            Normalized Mean Squared Error (NMSE) thresehold for inference output. Default: 0.5
     --operators                 List of operators (space separated string) to run. By default every operator under tidl_unit_test_data/operators
     --runtimes                  List of runtimes (space separated string) to run tests. Allowed values are (onnxrt, tvmrt). Default=onnxrt
     --tidl_tools_path           Path of tidl tools tarball (named as tidl_tools.tar.gz)
@@ -41,6 +42,7 @@ OPERATORS=()
 RUNTIMES=()
 tidl_tools_path=""
 compiled_artifacts_path=""
+nmse_threshold=""
 
 while [ $# -gt 0 ]; do
         case "$1" in
@@ -79,6 +81,9 @@ while [ $# -gt 0 ]; do
         ;;
         --compiled_artifacts_path=*)
         compiled_artifacts_path="${1#*=}"
+        ;;
+        --nmse_threshold=*)
+        nmse_threshold="${1#*=}"
         ;;
         --operators=*)
         operators="${1#*=}"
@@ -182,6 +187,10 @@ if [ "$compiled_artifacts_path" != "" ]; then
         exit 1
     fi
 fi
+
+# Operator specific nmse_threshold
+declare -A ops_nmse_threshold
+ops_nmse_threshold["ArgMax"]="0"
 
 if [ ${#OPERATORS[@]} -eq 0 ]; then
     OPERATORS=()
@@ -310,6 +319,11 @@ do
     ###############################################################################
     for operator in "${OPERATORS[@]}"
     do
+        op_nmse_threshold=$nmse_threshold
+        if [[ -v ops_nmse_threshold["$operator"] ]] && [ "$op_nmse_threshold" == "" ]; then
+            op_nmse_threshold="${ops_nmse_threshold[$operator]}"
+        fi
+
         logs_path=$path_reports/$operator
         rm -rf $logs_path
         mkdir -p $logs_path
@@ -330,7 +344,7 @@ do
 
             rm -rf logs/*
             if [ "$run_ref" == "1" ]; then
-                ./run_test.sh --test_suite=operator --tests=$operator --run_compile=0 --temp_buffer_dir=$temp_buffer_dir --runtime=$runtime
+                ./run_test.sh --test_suite=operator --tests=$operator --run_compile=0 --temp_buffer_dir=$temp_buffer_dir --nmse_threshold=$op_nmse_threshold --runtime=$runtime
                 cp logs/*.html "$logs_path/infer_ref_without_nc.html"
                 if [ "$temp_buffer_dir" != "/dev/shm" ]; then
                     rm -rf $temp_buffer_dir/vashm_buff*
@@ -357,7 +371,7 @@ do
             cp -rp "$TIDL_TOOLS_PATH/../ti_cnnperfsim.out" "$TIDL_TOOLS_PATH"
 
             rm -rf logs/*
-            ./run_test.sh --test_suite=operator --tests=$operator --run_infer=0 --temp_buffer_dir=$temp_buffer_dir --runtime=$runtime
+            ./run_test.sh --test_suite=operator --tests=$operator --run_infer=0 --temp_buffer_dir=$temp_buffer_dir --nmse_threshold=$op_nmse_threshold --runtime=$runtime
             cp logs/*.html "$logs_path/compile_with_nc.html"
             if [ "$temp_buffer_dir" != "/dev/shm" ]; then
                 rm -rf $temp_buffer_dir/vashm_buff*
@@ -365,7 +379,7 @@ do
 
             rm -rf logs/*
             if [ "$run_ref" == "1" ]; then
-                ./run_test.sh --test_suite=operator --tests=$operator --run_compile=0 --flow_ctrl=1 --temp_buffer_dir=$temp_buffer_dir --runtime=$runtime
+                ./run_test.sh --test_suite=operator --tests=$operator --run_compile=0 --flow_ctrl=1 --temp_buffer_dir=$temp_buffer_dir --nmse_threshold=$op_nmse_threshold --runtime=$runtime
                 cp logs/*.html "$logs_path/infer_ref_with_nc.html"
                 if [ "$temp_buffer_dir" != "/dev/shm" ]; then
                     rm -rf $temp_buffer_dir/vashm_buff*
@@ -374,7 +388,7 @@ do
 
             rm -rf logs/*
             if [ "$run_natc" == "1" ]; then
-                ./run_test.sh --test_suite=operator --tests=$operator --run_compile=0 --flow_ctrl=12 --temp_buffer_dir=$temp_buffer_dir --runtime=$runtime
+                ./run_test.sh --test_suite=operator --tests=$operator --run_compile=0 --flow_ctrl=12 --temp_buffer_dir=$temp_buffer_dir --nmse_threshold=$op_nmse_threshold --runtime=$runtime
                 cp logs/*.html "$logs_path/infer_natc_with_nc.html"
                 if [ "$temp_buffer_dir" != "/dev/shm" ]; then
                     rm -rf $temp_buffer_dir/vashm_buff*
@@ -383,7 +397,7 @@ do
 
             rm -rf logs/*
             if [ "$run_ci" == "1" ]; then
-                ./run_test.sh --test_suite=operator --tests=$operator --run_compile=0 --flow_ctrl=0 --temp_buffer_dir=$temp_buffer_dir --runtime=$runtime
+                ./run_test.sh --test_suite=operator --tests=$operator --run_compile=0 --flow_ctrl=0 --temp_buffer_dir=$temp_buffer_dir --nmse_threshold=$op_nmse_threshold --runtime=$runtime
                 cp logs/*.html "$logs_path/infer_ci_with_nc.html"
                 if [ "$temp_buffer_dir" != "/dev/shm" ]; then
                     rm -rf $temp_buffer_dir/vashm_buff*
@@ -393,7 +407,10 @@ do
             rm -rf logs/*
             if [ "$run_target" == "1" ]; then
                 cd $path_edge_ai_benchmark/tests/evm_test/
-                python3 main.py --test_suite=TIDL_UNIT_TEST --soc=$SOC --uart=/dev/am68a-sk-00-usb2 --pc_ip=192.168.46.0 --evm_local_ip=192.168.46.100 --reboot_type=hard --relay_type=ANEL --relay_trigger_mechanism=EXE --relay_exe_path=/work/ti/UNIT_TEST/net-pwrctrl.exe --relay_ip_address=10.24.69.252 --relay_power_port=8 --dataset_dir=/work/ti/UNIT_TEST/tidl_models/unitTest/onnx/tidl_unit_test_assets --operators=$operator
+
+                extra_args="--nmse-threshold $op_nmse_threshold"
+
+                python3 main.py --test_suite=TIDL_UNIT_TEST --soc=$SOC --uart=/dev/am68a-sk-00-usb2 --pc_ip=192.168.46.0 --evm_local_ip=192.168.46.100 --reboot_type=hard --relay_type=ANEL --relay_trigger_mechanism=EXE --relay_exe_path=/work/ti/UNIT_TEST/net-pwrctrl.exe --relay_ip_address=10.24.69.252 --relay_power_port=8 --dataset_dir=/work/ti/UNIT_TEST/tidl_models/unitTest/onnx/tidl_unit_test_assets --operators=$operator --extra_args=$extra_args
                 cd -
                 cp logs/*.html "$logs_path"
                 cd $logs_path
@@ -420,7 +437,10 @@ do
             rm -rf logs/*
             if [ "$run_target" == "1" ]; then
                 cd $path_edge_ai_benchmark/tests/evm_test/
-                python3 main.py --test_suite=TIDL_UNIT_TEST --soc=$SOC --uart=/dev/am68a-sk-00-usb2 --pc_ip=192.168.46.0 --evm_local_ip=192.168.46.100 --reboot_type=hard --relay_type=ANEL --relay_trigger_mechanism=EXE --relay_exe_path=/work/ti/UNIT_TEST/net-pwrctrl.exe --relay_ip_address=10.24.69.252 --relay_power_port=8 --dataset_dir=/work/ti/UNIT_TEST/tidl_models/unitTest/onnx/tidl_unit_test_assets --operators=$operator --artifacts_folder=$compiled_artifacts_path
+
+                extra_args="--nmse-threshold $op_nmse_threshold"
+
+                python3 main.py --test_suite=TIDL_UNIT_TEST --soc=$SOC --uart=/dev/am68a-sk-00-usb2 --pc_ip=192.168.46.0 --evm_local_ip=192.168.46.100 --reboot_type=hard --relay_type=ANEL --relay_trigger_mechanism=EXE --relay_exe_path=/work/ti/UNIT_TEST/net-pwrctrl.exe --relay_ip_address=10.24.69.252 --relay_power_port=8 --dataset_dir=/work/ti/UNIT_TEST/tidl_models/unitTest/onnx/tidl_unit_test_assets --operators=$operator --artifacts_folder=$compiled_artifacts_path --extra_args=$extra_args
                 cd -
                 cp logs/*.html "$logs_path"
                 cd $logs_path

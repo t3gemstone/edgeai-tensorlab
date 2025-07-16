@@ -75,7 +75,7 @@ class TIDLUnitTestEVM(TIDLBaseEVMTest):
         
         return (status, critical_error_test_name)
 
-    def run_single_test(self, test_name, test_cmd, total_test=1, timeout=300):
+    def run_single_test(self, test_name, test_cmd, total_test=1, extra_args="", timeout=300):
         test_itr = self.test_num + 1
         print(f"\n\n[ Info ] Running {test_itr}/{total_test} [{test_name}]")
         log_file_path = f'{self.logs_dir}/{test_itr:>04}_{test_name}.log'
@@ -118,7 +118,7 @@ class TIDLUnitTestEVM(TIDLBaseEVMTest):
             infer_status = False
             response_status = 0
             if status:
-                command = f'cd ~ && TEST_NAME="{name}" TEST_COMMAND="{test_cmd}" TIMEOUT={command_time_out} ./model_infer_tidl_unit_test.sh'
+                command = f'cd ~ && TEST_NAME="{name}" TEST_COMMAND="{test_cmd}" TIMEOUT={command_time_out} PYTEST_EXTRA_ARGS={extra_args} ./model_infer_tidl_unit_test.sh'
                 infer_status = uart_interface.send_uart_command(command, "END_OF_MODEL_INFERENCE", timeout, True, 1)
                 response = uart_interface.log_buffer
                 print(f"\n\n*******************************\nLog Buffer : {response}\n*******************************\n\n")
@@ -140,7 +140,7 @@ class TIDLUnitTestEVM(TIDLBaseEVMTest):
         return response_status
 
 
-    def run_tests(self, test_list, timeout=300):
+    def run_tests(self, test_list, extra_args="", timeout=300):
         total_tests = len(test_list)
         while self.test_num < total_tests:
             print()
@@ -148,7 +148,7 @@ class TIDLUnitTestEVM(TIDLBaseEVMTest):
             try:
                 test_name = test_list[self.test_num][0]
                 test_cmd = test_list[self.test_num][1]
-                status = self.run_single_test(test_name=test_name, test_cmd=test_cmd, total_test=total_tests, timeout=timeout)
+                status = self.run_single_test(test_name=test_name, test_cmd=test_cmd, total_test=total_tests, extra_args=extra_args, timeout=timeout)
                 if status == 0:
                     print(f"[ Info ] Test {self.test_num + 1}/{total_tests} [{test_name}] did not run successfully!")
                 elif status == -1:

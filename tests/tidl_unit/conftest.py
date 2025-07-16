@@ -14,6 +14,7 @@ def pytest_addoption(parser):
     parser.addoption("--exit-on-critical-error", action="store_true", default=False)
     parser.addoption("--flow-control", type=int, default=-1)
     parser.addoption("--temp-buffer-dir", type=str, default="/dev/shm")
+    parser.addoption("--nmse-threshold", type=float, default=0.5)
     parser.addoption("--runtime", type=str, default="onnxrt")
 
 def pytest_sessionfinish(session):
@@ -38,6 +39,7 @@ def pytest_runtest_makereport(item, call):
     runtime = item.funcargs['runtime']
     report.tidl_subgraphs = "Not detected"
     report.complete_tidl_offload = "Not detected"
+    report.nmse = "-"
     if report.when == 'call' or report.when == 'teardown':
         # Parsing subgraphs]
         if runtime == "onnxrt":
@@ -107,10 +109,17 @@ def pytest_runtest_makereport(item, call):
                                 pytest.exit(f"CRITICAL_ERROR - {item.nodeid} - {j} detected. Exiting test run.")
         else:
             report.complete_tidl_offload = "-"
+
+        nmse_regex = re.search(r'MAX_NMSE: (\d*\.\d+|\d+|None)', report.capstdout)
+        if nmse_regex:
+            nmse = nmse_regex.group(1)
+            report.nmse = str(nmse)
+
 # Inserts the TIDL Subgraphs table header
 def pytest_html_results_table_header(cells):
     cells.insert(2, html.th("TIDL Subgraphs"))
     cells.insert(3, html.th("Complete TIDL Offload"))
+    cells.insert(4, html.th("NMSE"))
 
 # Inserts the number of TIDL subgraphs for each row
 def pytest_html_results_table_row(report, cells):
@@ -118,3 +127,5 @@ def pytest_html_results_table_row(report, cells):
         cells.insert(2, html.td(report.tidl_subgraphs))
     if(hasattr(report,'complete_tidl_offload')):
         cells.insert(3, html.td(report.complete_tidl_offload))
+    if(hasattr(report,'nmse')):
+        cells.insert(4, html.td(report.nmse))
