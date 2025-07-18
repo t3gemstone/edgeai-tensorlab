@@ -51,7 +51,7 @@ model = dict(
         init_cfg=dict(
             type='Pretrained', checkpoint="pretrained/cascade_mask_rcnn_r50_fpn_coco-20e_20e_nuim_20201009_124951-40963960.pth",
             prefix='backbone.'),
-        type='mmdet.ResNet',
+        type='EdgeAIResNet',
         depth=50,
         num_stages=4,
         out_indices=(2, 3),
@@ -59,6 +59,7 @@ model = dict(
         norm_cfg=dict(type='BN2d', requires_grad=False),
         norm_eval=True,
         with_cp=True,
+        use_reentrant=False,
         style='pytorch'),
     img_neck=dict(
         type='CPFPN',  ###remove unused parameters 
