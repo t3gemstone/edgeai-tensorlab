@@ -1,6 +1,7 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 from mmdet.models.backbones import SSDVGG, HRNet, ResNet, ResNetV1d, ResNeXt
 
+from .resnet import EdgeAIResNet
 from .cylinder3d import Asymm3DSpconv
 from .dgcnn import DGCNNBackbone
 from .dla import DLANet
@@ -14,7 +15,7 @@ from .second import SECOND
 from .spvcnn_backone import MinkUNetBackboneV2, SPVCNNBackbone
 
 __all__ = [
-    'ResNet', 'ResNetV1d', 'ResNeXt', 'SSDVGG', 'HRNet', 'NoStemRegNet',
+    'EdgeAIResNet', 'ResNet', 'ResNetV1d', 'ResNeXt', 'SSDVGG', 'HRNet', 'NoStemRegNet',
     'SECOND', 'DGCNNBackbone', 'PointNet2SASSG', 'PointNet2SAMSG',
     'MultiBackbone', 'DLANet', 'MinkResNet', 'Asymm3DSpconv',
     'MinkUNetBackbone', 'SPVCNNBackbone', 'MinkUNetBackboneV2'

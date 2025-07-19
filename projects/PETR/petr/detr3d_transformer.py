@@ -454,6 +454,7 @@ class Detr3DTemporalDecoderLayer(BaseModule):
                 attn_masks,
                 query_key_padding_mask,
                 key_padding_mask,
+                use_reentrant=False,
                 )
         else:
             x = self._forward(
