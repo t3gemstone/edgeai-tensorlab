@@ -33,20 +33,15 @@ from engine import evaluate, train_one_epoch
 from group_by_aspect_ratio import create_aspect_ratio_groups, GroupedBatchSampler
 from torchvision.transforms import InterpolationMode
 from transforms import SimpleCopyPaste
-from typing import Any, Dict, List, Optional, Tuple
 
 from patch_utils import postprocess_ssd, postprocess_detections_ssd, _batched_nms_coordinate_tricks_custom
 
 import edgeai_torchmodelopt
 from torchvision.ops import boxes as box_ops
-from torchvision.ops.boxes import nms
-
-from torchvision.models.detection.roi_heads import paste_masks_in_image
-from torchvision.models.detection.transform import resize_boxes, resize_keypoints, GeneralizedRCNNTransform
-from torchvision.models.detection import _utils as det_utils
+from torchvision.models.detection.transform import GeneralizedRCNNTransform
 from torchvision.models.detection.ssd import SSD
 
-
+#patching
 box_ops._batched_nms_coordinate_trick = _batched_nms_coordinate_tricks_custom
 SSD.postprocess_detections = postprocess_detections_ssd
 GeneralizedRCNNTransform.postprocess = postprocess_ssd
@@ -390,7 +385,7 @@ def main(args):
     for epoch in range(args.start_epoch, args.epochs):
         if args.distributed:
             train_sampler.set_epoch(epoch)
-        # train_one_epoch(model, optimizer, data_loader, device, epoch, args.print_freq, scaler)
+        train_one_epoch(model, optimizer, data_loader, device, epoch, args.print_freq, scaler)
         lr_scheduler.step()
         if args.output_dir:
             checkpoint = {
@@ -415,22 +410,13 @@ def main(args):
     print(f"Training time {total_time_str}")
 
     # export onnx
+    if 'SSD' in args.model:
+        output_names = ["dets","labels"]
+    else:
+        output_names = None
     cpu_model = model_without_ddp.cpu()
     onnx_modelname = f"{args.model}.onnx"
-    save_file = os.path.join(args.output_dir, onnx_modelname)
-    export_model(args, cpu_model, epoch, model_name=onnx_modelname, output_names=["dets","labels"])
-
-    #simplify onnx model
-    import onnx
-    onnx_model = onnx.load(save_file)
-    # if args.simplify:
-    try:
-        import onnxsim
-        onnx_model, check = onnxsim.simplify(onnx_model)
-        assert check, 'assert check failed'
-    except Exception as e:
-        print(f'Simplify failure: {e}')
-    onnx.save(onnx_model, save_file)
+    export_model(args, cpu_model, epoch, model_name=onnx_modelname, output_names=output_names)
 
 
 if __name__ == "__main__":
