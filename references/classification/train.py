@@ -4,6 +4,7 @@ import time
 import warnings
 import copy
 
+import numpy as np
 import presets
 import torch
 import torch.utils.data
@@ -12,6 +13,12 @@ import torchvision.transforms
 import utils
 from sampler import RASampler
 from torch import nn
+import torch.distributed as dist
+from torcheval.metrics.functional import multiclass_confusion_matrix
+
+import pandas as pd
+from tabulate import tabulate
+
 from torch.utils.data.dataloader import default_collate
 from torchvision.transforms.functional import InterpolationMode
 from transforms import get_mixup_cutmix
@@ -68,7 +75,7 @@ def train_one_epoch(model, criterion, optimizer, data_loader, device, epoch, arg
             break
 
 
-def evaluate(args, model, criterion, data_loader, device, print_freq=100, log_suffix=""):
+def evaluate(args, model, criterion, data_loader, device, print_freq=100, log_suffix="", **kwargs):
     model.eval()
     metric_logger = utils.MetricLogger(delimiter="  ")
     header = f"Test: {log_suffix}"
@@ -81,6 +88,14 @@ def evaluate(args, model, criterion, data_loader, device, print_freq=100, log_su
             target = target.to(device, non_blocking=True)
             output = model(image)
             loss = criterion(output, target)
+
+            confusion_matrix_total = np.zeros((kwargs.get('num_classes'), kwargs.get('num_classes')))
+            confusion_matrix = multiclass_confusion_matrix(output, target, kwargs.get('num_classes')).cpu().numpy()
+            confusion_matrix_total += confusion_matrix
+
+            print('Confusion Matrix:\n {}'.format(tabulate(pd.DataFrame(confusion_matrix,
+            columns=[f"Predicted as: {x}" for x in range(kwargs.get('num_classes'))],
+            index=[f"Ground Truth: {x}" for x in range(kwargs.get('num_classes'))]), headers="keys", tablefmt='grid')))
 
             acc1, acc5 = utils.accuracy(output, target, topk=(1, 5))
             # FIXME need to take into account that the datasets
@@ -111,7 +126,7 @@ def evaluate(args, model, criterion, data_loader, device, print_freq=100, log_su
     metric_logger.synchronize_between_processes()
 
     print(f"{header} Acc@1 {metric_logger.acc1.global_avg:.3f} Acc@5 {metric_logger.acc5.global_avg:.3f}")
-    return metric_logger.acc1.global_avg
+    return metric_logger.acc1.global_avg, confusion_matrix_total
 
 
 def _get_cache_path(filepath):
@@ -254,7 +269,7 @@ def export_model(args, model, epoch, model_name):
         example_input = torch.rand((1,3,args.val_crop_size,args.val_crop_size), device=export_device)
         utils.export_on_master(model, example_input, os.path.join(args.output_dir, model_name), opset_version=args.opset_version)
     
-    print("Model Export is now Complete!")
+    print(f'Model Export is now Complete at epoch {epoch} !')
 
 
 def split_weights(weights_name):
@@ -479,23 +494,24 @@ def main(args):
         torch.backends.cudnn.deterministic = True
         print("Start Testing")
         if model_ema:
-            acc = evaluate(args, model_ema, criterion, data_loader_test, device=device, log_suffix="EMA")
+            acc, conf_matrix = evaluate(args, model_ema, criterion, data_loader_test, device=device, log_suffix="EMA", num_classes=num_classes)
         else:
-            acc = evaluate(args, model, criterion, data_loader_test, device=device)
+            acc, conf_matrix = evaluate(args, model, criterion, data_loader_test, device=device, num_classes=num_classes)
         export_model(args, model_without_ddp, 0, "model_test.onnx")
         return acc
 
     print("Start training")
     start_time = time.time()
     best_acc = 0
+    best_conf_matrix = dict()
     for epoch in range(args.start_epoch, args.epochs):
         if args.distributed:
             train_sampler.set_epoch(epoch)
         train_one_epoch(model, criterion, optimizer, data_loader, device, epoch, args, model_ema, scaler)
         lr_scheduler.step()
-        epoch_acc = evaluate(args, model, criterion, data_loader_test, device=device)
+        epoch_acc, conf_matrix = evaluate(args, model, criterion, data_loader_test, device=device, num_classes=num_classes)
         if model_ema:
-            epoch_acc = evaluate(args, model_ema, criterion, data_loader_test, device=device, log_suffix="EMA")
+            epoch_acc, conf_matrix = evaluate(args, model_ema, criterion, data_loader_test, device=device, log_suffix="EMA", num_classes=num_classes)
         if args.output_dir:
             checkpoint = {
                 "model": model_without_ddp.state_dict(),
@@ -508,13 +524,19 @@ def main(args):
                 checkpoint["model_ema"] = model_ema.state_dict()
             if scaler:
                 checkpoint["scaler"] = scaler.state_dict()
-            if epoch == 0 or epoch >= (args.epochs-10):
-                utils.save_on_master(checkpoint, os.path.join(args.output_dir, f"checkpoint_{epoch}.pth"))
-                export_model(args, model_without_ddp, epoch, f"model_{epoch}.onnx")
+            # if epoch == 0 or epoch >= (args.epochs-10):
+            #     utils.save_on_master(checkpoint, os.path.join(args.output_dir, f"checkpoint_{epoch}.pth"))
+            #     export_model(args, model_without_ddp, epoch, f"model_{epoch}.onnx")
             if epoch_acc >= best_acc:
                 utils.save_on_master(checkpoint, os.path.join(args.output_dir, "checkpoint.pth"))
                 export_model(args, model_without_ddp, epoch, f"model.onnx")
                 best_acc = epoch_acc
+                best_conf_matrix = conf_matrix
+
+    print('Best Confusion Matrix:\n {}'.format(tabulate(pd.DataFrame(best_conf_matrix,
+            columns=[f"Predicted as: {x}" for x in range(num_classes)],
+            index=[f"Ground Truth: {x}" for x in range(num_classes)]), headers="keys", tablefmt='grid')))
+    print('Best Accuracy (Acc@1): {}'.format(best_acc))
 
     # logger.close()
     total_time = time.time() - start_time
