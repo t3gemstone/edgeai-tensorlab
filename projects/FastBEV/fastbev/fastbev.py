@@ -280,16 +280,15 @@ class FastBEV(BaseDetector):
             prev_img_metas = []
 
             for i in range(1, num_prevs+1):
-                cur_sample_idx = img_meta['sample_idx']
-
-                if i > queue.qsize() or \
-                    img_meta['scene_token'] != memory[cur_sample_idx - i]['img_meta']['scene_token']:
+                qsize = queue.qsize()
+                if i > qsize or \
+                    img_meta['scene_token'] != memory[queue.queue[qsize-i]]['img_meta']['scene_token']:
 
                     prev_feats.append(torch.zeros(feats_size, dtype=img.dtype, device=img.device))
                     prev_img_metas.append(prev_img_meta)
                 else:
-                    prev_feat = memory[cur_sample_idx - i]['feature_map']
-                    prev_img_meta = memory[cur_sample_idx - i]['img_meta']
+                    prev_feat = memory[queue.queue[qsize-i]]['feature_map']
+                    prev_img_meta = memory[queue.queue[qsize-i]]['img_meta']
                     prev_feats.append(prev_feat)
                     prev_img_metas.append(prev_img_meta)
 

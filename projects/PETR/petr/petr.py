@@ -323,14 +323,13 @@ class PETR(MVXTwoStageDetector):
     def get_temporal_feats(self, queue, memory, img, img_metas, img_feat_size):
         # Support only batch_size = 1
         for batch_id, img_meta in enumerate(img_metas):
-            cur_sample_idx = img_meta['sample_idx']
             if queue.qsize() == 0 or \
-                img_meta['scene_token'] != memory[cur_sample_idx-1]['img_meta']['scene_token']:
+                img_meta['scene_token'] != memory[queue.queue[0]]['img_meta']['scene_token']:
                 prev_feat = 0
                 prev_img_meta = copy.deepcopy(img_meta)
             else:
-                prev_feat = memory[cur_sample_idx-1]['feature_map']
-                prev_img_meta = memory[cur_sample_idx-1]['img_meta']
+                prev_feat = memory[queue.queue[0]]['feature_map']
+                prev_img_meta = memory[queue.queue[0]]['img_meta']
 
             # Update img_metas with concatenated fields
             img_meta = self.add_prev_img_metas(prev_img_meta, img_meta)
