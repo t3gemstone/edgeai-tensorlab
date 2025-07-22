@@ -69,10 +69,13 @@ class CocoEvaluator:
         for original_id, prediction in predictions.items():
             if len(prediction) == 0:
                 continue
-
-            boxes = prediction["boxes"]
+            if len(prediction) == 2:
+                boxes = prediction["dets"][:,:4]
+                scores = prediction["dets"][:,4].tolist()
+            else:
+                boxes = prediction["boxes"]
+                scores = prediction["scores"].tolist()
             boxes = convert_to_xywh(boxes).tolist()
-            scores = prediction["scores"].tolist()
             labels = prediction["labels"].tolist()
 
             coco_results.extend(
