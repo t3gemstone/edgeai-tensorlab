@@ -44,10 +44,10 @@ model = dict(
     position_level=[0, 1, 2, 3],
     data_preprocessor=dict(
         type='Petr3DDataPreprocessor',
-        #mean=[103.530, 116.280, 123.675],
-        #std=[57.375, 57.120, 58.395],
-        mean=[0.0, 0.0, 0.0],
-        std=[1.0, 1.0, 1.0],
+        mean=[103.530, 116.280, 123.675],
+        std=[57.375, 57.120, 58.395],
+        #mean=[0.0, 0.0, 0.0],
+        #std=[1.0, 1.0, 1.0],
         bgr_to_rgb=False, # False always
         pad_size_divisor=32),
     img_backbone=dict(
@@ -186,7 +186,6 @@ file_client_args = dict(backend='disk')
 ida_aug_conf = {
         "resize_lim": (0.47, 0.55),
         "final_dim": (640, 960),
-        "final_dim_f": (640, 720),
         "bot_pct_lim": (0.0, 0.0),
         "rot_lim": (0.0, 0.0),
         "H": 900,
@@ -200,8 +199,8 @@ train_pipeline = [
     dict(type='ObjectRangeFilter', point_cloud_range=point_cloud_range),
     dict(type='ObjectNameFilter', classes=class_names),
     dict(type='ResizeCropFlipRotImage', data_aug_conf = ida_aug_conf),
-    dict(type='NormalizeMultiviewImage', **img_norm_cfg),
-    dict(type='PadMultiViewImage', size_divisor=32),
+    #dict(type='NormalizeMultiviewImage', **img_norm_cfg),
+    #dict(type='PadMultiViewImage', size_divisor=32),
     dict(type='DownsampleQuantizeInstanceDepthmap', downsample=depthnet_config['stride'], depth_config=depthnet_config),
     dict(
         type='CustomPack3DDetInputs',
@@ -214,8 +213,8 @@ train_pipeline = [
 test_pipeline = [
     dict(type='LoadMultiViewImageFromFiles', to_float32=True),
     dict(type='ResizeCropFlipRotImage', data_aug_conf = ida_aug_conf, training=False),
-    dict(type='NormalizeMultiviewImage', **img_norm_cfg),
-    dict(type='PadMultiViewImage', size_divisor=32),
+    #dict(type='NormalizeMultiviewImage', **img_norm_cfg),
+    #dict(type='PadMultiViewImage', size_divisor=32),
     dict(
         type='CustomMultiScaleFlipAug3D',
         img_scale=(1333, 800),
@@ -256,7 +255,7 @@ train_dataloader = dict(
         box_type_3d='LiDAR',
         metainfo=metainfo,
         test_mode=False,
-        use_valid_flag=False,
+        use_valid_flag=True,
         modality=input_modality,
         batch_size=batch_size, # Needed for GroupSampler
         backend_args=backend_args))
@@ -268,7 +267,7 @@ test_dataloader = dict(
     drop_last=True,
     dataset=dict(
         type=dataset_type,
-        ann_file='nuscenes_strpetr_infos_train.pkl',
+        ann_file='nuscenes_strpetr_infos_val.pkl',
         data_prefix=dict(
             pts='samples/LIDAR_TOP',
             CAM_FRONT='samples/CAM_FRONT',
@@ -280,7 +279,6 @@ test_dataloader = dict(
         num_frame_losses=num_frame_losses,
         collect_keys=collect_keys + ['img', 'prev_exists', 'img_metas'],
         queue_length=queue_length,
-        #filter_empty_gt=False,
         pipeline=test_pipeline,
         box_type_3d='LiDAR',
         metainfo=metainfo,
@@ -304,11 +302,8 @@ val_dataloader = dict(
             CAM_BACK_RIGHT='samples/CAM_BACK_RIGHT',
             CAM_BACK_LEFT='samples/CAM_BACK_LEFT'),
         num_frame_losses=num_frame_losses,
-        #seq_split_num=2, # streaming video training
-        #seq_mode=True, # streaming video training
         collect_keys=collect_keys + ['img', 'prev_exists', 'img_metas'],
         queue_length=queue_length,
-        #filter_empty_gt=False,
         pipeline=test_pipeline,
         box_type_3d='LiDAR',
         metainfo=metainfo,

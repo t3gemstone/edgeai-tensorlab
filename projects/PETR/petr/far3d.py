@@ -365,7 +365,6 @@ class Far3D(MVXTwoStageDetector):
         location  = None
         outs_roi  = self.forward_roi_head(location, img_feats, img_metas)
         bbox_dict = self.img_roi_head.predict_by_feat(outs_roi)  # {'bbox_list': BN x (Mi, 4), 'bbox_score_list': BN x (Mi, 1)}
-        bbox_roi = bbox_dict['bbox_list']
         outs_roi.update(bbox_dict)
 
         outs = self.pts_bbox_head(img_feats, img_metas, outs_roi)
@@ -376,34 +375,9 @@ class Far3D(MVXTwoStageDetector):
         if self.with_img_roi_head:
             loss2d_inputs = [gt_bboxes, gt_labels, centers2d, depths, outs_roi, img_metas]
             losses2d = self.img_roi_head.loss_by_feat(*loss2d_inputs)
-            losses.update(losses2d) 
+            losses.update(losses2d)
 
         return losses
-
-        """
-        if not requires_grad:
-            self.eval()
-            with torch.no_grad():
-                outs = self.pts_bbox_head(location, img_feats, img_metas, None)
-            self.train()
-        else:
-            outs_roi = self.forward_roi_head(location, img_feats)
-            topk_indexes = outs_roi['topk_indexes']
-            outs = self.pts_bbox_head(location, img_feats, img_metas, topk_indexes)
-
-        if return_losses:
-            loss_inputs = [gt_bboxes_3d, gt_labels_3d, outs]
-            losses = self.pts_bbox_head.loss_by_feat(*loss_inputs)
-            if self.with_img_roi_head:
-                loss2d_inputs = [gt_bboxes, gt_labels, centers2d, depths, outs_roi, img_metas]
-                losses2d = self.img_roi_head.loss_by_feat(*loss2d_inputs)
-                losses.update(losses2d)
-
-            return losses
-        else:
-            return None
-        """
-
 
     def _forward(self, inputs=None, data_samples=None, mode=None, **kwargs):
         """Calls either forward_train or forward_test depending on whether

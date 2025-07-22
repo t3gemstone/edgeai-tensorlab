@@ -145,8 +145,9 @@ class YOLOXHeadCustom(BaseDenseHead):
         if self.train_cfg:
             self.assigner = TASK_UTILS.build(self.train_cfg['assigner'])
             # sampling=False so use PseudoSampler
-            self.sampler  = PseudoSampler()
-            self.sampler_ = PseudoSampler()
+            sampler_cfg = dict(type='PseudoSampler')
+            self.sampler  = TASK_UTILS.build(sampler_cfg)
+            self.sampler_ = TASK_UTILS.build(sampler_cfg)
 
         self.pred_with_depth = pred_with_depth
         self.depthnet_config = depthnet_config
