@@ -30,7 +30,7 @@
 
 ######################################################################
 # change default tidl_tools version if needed
-# examples: 11.0 10.1 10.0
+# examples: 11.1 11.0 10.1 10.0
 TIDL_TOOLS_VERSION=${TIDL_TOOLS_VERSION:-"11.1"}
 echo "TIDL_TOOLS_VERSION=${TIDL_TOOLS_VERSION}"
 
@@ -71,21 +71,26 @@ if [ -d "${CURRENT_WORK_DIR}/../edgeai-tidl-tools" ]; then
   cd ${CURRENT_WORK_DIR}
 fi
 
+#######################################################################
+# install tidl_tools_package
 echo "--------------------------------------------------------------------------------------------------------------"
 echo "INFO: installing tidl-tools-package version: ${TIDL_TOOLS_VERSION}"
 cd ${CURRENT_WORK_DIR}
-pip3 install -r ./tools/requirements/requirements_${TIDL_TOOLS_VERSION}.txt
 TIDL_TOOLS_TYPE=${TIDL_TOOLS_TYPE} TIDL_TOOLS_VERSION=${TIDL_TOOLS_VERSION} python3 ./tools/setup.py develop
-
 cd ${CURRENT_WORK_DIR}
+
+#######################################################################
 echo 'INFO: installing local module using setup.py...'
 # there as issue with installing pillow-simd through requirements - force it here
 pip3 uninstall --yes pillow
 pip3 install --no-input -U --force-reinstall pillow-simd
-pip3 install --no-input onnx==1.14.0 protobuf
+
 pip3 install --no-input -r ./requirements/requirements_pc.txt
 pip3 install --no-input onnx_graphsurgeon==0.3.26 --extra-index-url https://pypi.ngc.nvidia.com
-python3 setup.py develop
+
+#######################################################################
+# install edgeai_benchmark
+TIDL_TOOLS_TYPE=${TIDL_TOOLS_TYPE} TIDL_TOOLS_VERSION=${TIDL_TOOLS_VERSION} python3 setup.py develop
 echo "--------------------------------------------------------------------------------------------------------------"
 
 ######################################################################
