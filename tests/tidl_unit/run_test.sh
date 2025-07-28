@@ -63,6 +63,7 @@ run_infer=""
 tidl_offload=""
 flow_ctrl=""
 temp_buffer_dir=""
+nmse_threshold=""
 runtime="onnxrt"
 
 while [ $# -gt 0 ]; do
@@ -87,6 +88,9 @@ while [ $# -gt 0 ]; do
         ;;
         --temp_buffer_dir=*)
         temp_buffer_dir="${1#*=}"
+        ;;
+        --nmse_threshold=*)
+        nmse_threshold="${1#*=}"
         ;;
         --runtime=*)
         runtime="${1#*=}"
@@ -232,6 +236,9 @@ if [[ "$tidl_offload" == "0" ]]; then
 fi
 if [[ "$flow_ctrl" != "1" ]]; then
    extra_args="${extra_args} --flow-control $flow_ctrl"
+fi
+if [[ "$nmse_threshold" != "" ]]; then
+   extra_args="${extra_args} --nmse-threshold $nmse_threshold"
 fi
 extra_args="${extra_args} --temp-buffer-dir $temp_buffer_dir"
 extra_args="${extra_args} --runtime=${runtime}"

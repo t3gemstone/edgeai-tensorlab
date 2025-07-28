@@ -526,7 +526,9 @@ class BEVSensorsRead():
         info_dict['pad_shape']      = (self.crop[3], self.crop[2])
         info_dict['lidar2ego']      = np.array(data['lidar2ego'])
         info_dict['scene_token']    = data['scene_token']
-
+        info_dict['timestamp']      = data['timestamp']
+        info_dict['img_timestamp']  = [v['timestamp'] for k, v  in data['cams'].items()]
+        info_dict['delta_timestamp']= [info_dict['timestamp'] - v['timestamp'] for k, v  in data['cams'].items()]
 
         if info_dict['task_name'] == 'BEVFormer':
             info_dict['prev_bev_exist'] = True
@@ -593,6 +595,7 @@ class GetPETRGeometry():
         self.C              = 256
         self.H              = featsize[0]
         self.W              = featsize[1]
+        self.feats_size = [1,6,256,20,50]
 
         self.position_level = 0
         self.with_multiview = True
@@ -601,10 +604,34 @@ class GetPETRGeometry():
         self.depth_start    = 1
         self.position_range = [-61.2, -61.2, -10.0, 61.2, 61.2, 10.0]
 
+    def add_lidar2img(self, img, meta):
+        """add 'lidar2img' transformation matrix into batch_input_metas.
+
+        Args:
+            batch_input_metas (list[dict]): Meta information of multiple inputs
+                in a batch.
+        Returns:
+            batch_input_metas (list[dict]): Meta info with lidar2img added
+        """
+        # for meta in batch_input_metas:
+        img_shape = meta['data_shape'][:2]
+        meta['img_shape'] = [img_shape] * len(meta['lidar2imgs'])
+
+        return meta
+
+    def prepare_data(self, img, info_dict):
+        input_shape = img.shape[-2:]
+
+        self.info_dict = info_dict
+
+        # update real input shape of each single img
+        # for img_meta in self.inp:
+        info_dict.update(input_shape=input_shape)
 
     def create_coords3d(self, info_dict):
         batch_size = self.B
-        num_cams = info_dict['num_cams']
+        #num_cams = info_dict['num_cams']
+        num_cams = len(info_dict['lidar2imgs'])
         pad_h, pad_w = info_dict['pad_shape']
 
         # forward() in petr_head.py
@@ -649,7 +676,7 @@ class GetPETRGeometry():
         
         #img2lidars = coords.new_tensor(img2lidars)  # (B, N, 4, 4)
 
-        coords = np.repeat(coords.reshape(1, 1, W, H, D, 4, 1), 6, 1)
+        coords = np.repeat(coords.reshape(1, 1, W, H, D, 4, 1), N, 1)
         #img2lidars = img2lidars.reshape(B, N, 1, 1, 1, 4, 4).repeat(1, 1, W, H, D, 1, 1)
         img2lidars = np.repeat(img2lidars.reshape(B, N, 1, 1, 1, 4, 4), W, 2)
         img2lidars = np.repeat(img2lidars, H, 3)
@@ -668,20 +695,99 @@ class GetPETRGeometry():
         coords_mask = masks | coords_mask.transpose(0, 1, 3, 2)
         coords3d = np.ascontiguousarray(coords3d.transpose(0, 1, 4, 5, 3, 2)).reshape(B * N, -1, H, W)
         coords3d = inverse_sigmoid(coords3d)
+        coords3d = coords3d.astype(np.float32)
 
         return masks, coords3d
 
+    def add_prev_img_metas(self, prev_img_meta, info_dict):
+        e2g = np.array(info_dict['ego2globals'][0][0])
+        l2e = np.array(info_dict['lidar2ego'])
+
+        e2g_p = np.array(prev_img_meta['ego2globals'][0][0])
+        l2e_p = np.array(prev_img_meta['lidar2ego'])
+
+        prev_post_intrins = np.array(prev_img_meta['post_intrins'][0])
+
+        for i in range(len(info_dict['lidar2cams'])):
+            l2c_p = np.array(prev_img_meta['lidar2cams'][i])
+            # Transform [R|t] from the (temporal) previous camera  to the current lidar
+            cam2lidar_p_c = np.linalg.inv(l2e) @ np.linalg.inv(e2g) @ e2g_p @ l2e_p @ np.linalg.inv(l2c_p)
+            # Transform [R|t] from the current lidar to the (temporal) previous camera
+            lidar2cam_p_c = np.linalg.inv(cam2lidar_p_c)
+            # Transform [R|t] from the current lidar to the (temporal) previous image
+            post_intrins = np.eye(4)
+            post_intrins[:3, :3] = prev_post_intrins[i]
+            lidar2img_p_c = post_intrins @ lidar2cam_p_c
+
+            # info_dict['post_intrins'].append(prev_post_intrins[i])
+            info_dict['lidar2cams'].append(lidar2cam_p_c)
+            # info_dict['lidar2cams'] = np.concatenate((, np.expand_dims(lidar2cam_p_c, axis=0)), axis=0)
+            info_dict['lidar2imgs'].append(lidar2img_p_c)
+            info_dict['delta_timestamp'].append(info_dict['timestamp'] - prev_img_meta['img_timestamp'][i])
+
+        return info_dict
+
+    def get_temporal_feats(self, info_dict):
+        prev_feat = None
+        prev_img_meta = info_dict
+        prev_feats = []
+        prev_img_metas = []
+
+        if 'queue' in info_dict:
+            num_prevs   = info_dict['num_bev_temporal_frames']
+            queue_mem   = copy.deepcopy(info_dict['queue_mem'])
+            feats_queue = info_dict['queue']
+            del info_dict['queue_mem']
+            del info_dict['queue']
+
+            # Support only batch_size = 1s
+            for i in range(1, num_prevs+1):
+                cur_sample_idx = info_dict['sample_idx']
+
+                if i > feats_queue.qsize() or \
+                    info_dict['scene_token'] != queue_mem[cur_sample_idx - i]['img_meta']['scene_token']:
+                    if prev_feat is None:
+                        #prev_feats.append(np.zeros(self.feats_size, dtype=img.dtype))
+                        prev_feats.append(np.zeros(self.feats_size, dtype=np.float32))
+                        prev_img_metas.append(prev_img_meta)
+                    else:
+                        prev_feats.append(prev_feat)
+                        prev_img_metas.append(prev_img_meta)
+                else:
+                    prev_feat = queue_mem[cur_sample_idx - i]['feature_map']
+                    prev_img_meta = queue_mem[cur_sample_idx - i]['img_meta']
+                    prev_feats.append(prev_feat)
+                    prev_img_metas.append(prev_img_meta)
+                self.add_prev_img_metas(prev_img_meta, info_dict)
+
+        return np.concatenate(prev_feats, axis=0), prev_img_metas
 
     def __call__(self, data, info_dict):
-        masks, coords3d = self.create_coords3d(info_dict)
+        # get previous temporal infos
+        prev_feats_map = None
+        prev_input_metas = None
 
         ## for petr, combine all 6 images into on
         temp = np.concatenate(data, 0)
         data=[]
         data.append(temp)
+        if 'num_bev_temporal_frames' in info_dict and info_dict['num_bev_temporal_frames'] > 0:
+            prev_feats_map, prev_input_metas = self.get_temporal_feats(info_dict)
+            info_dict = self.add_lidar2img(data, info_dict)
+            self.prepare_data(data[0], info_dict)
+
+        masks, coords3d = self.create_coords3d(info_dict)
 
         ## append coords3d. masks are not needed.
         data.append(coords3d)
+
+        if 'num_bev_temporal_frames' in info_dict and info_dict['num_bev_temporal_frames'] > 0:
+            if np.all(prev_feats_map == 0):
+                valid_prev_feats= 0
+            else:
+                valid_prev_feats = 1
+            data.append(np.array(valid_prev_feats, dtype=np.float32)) 
+            data.append(prev_feats_map)
 
         return data, info_dict
 

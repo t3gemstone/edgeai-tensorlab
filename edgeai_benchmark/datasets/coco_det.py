@@ -161,7 +161,6 @@ class COCODetection(DatasetBase):
         self.cat_ids = self.coco_dataset.getCatIds()
         self.img_ids = self.coco_dataset.getImgIds()
         self.num_frames = self.kwargs['num_frames'] = num_frames
-        self.tempfiles = []
 
     def download(self, path, split):
         root = path
@@ -206,20 +205,12 @@ class COCODetection(DatasetBase):
     def __len__(self):
         return min(self.num_frames, len(self.img_ids)) if self.num_frames else len(self.img_ids)
 
-    def __del__(self):
-        for t in self.tempfiles:
-            t.cleanup()
-        #
-
     def __call__(self, predictions, **kwargs):
         return self.evaluate(predictions, **kwargs)
 
     def evaluate(self, predictions, **kwargs):
         label_offset = kwargs.get('label_offset_pred', 0)
         #run_dir = kwargs.get('run_dir', None)
-        temp_dir_obj = tempfile.TemporaryDirectory()
-        temp_dir = temp_dir_obj.name
-        self.tempfiles.append(temp_dir_obj)
 
         #os.makedirs(run_dir, exist_ok=True)
         detections_formatted_list = []
@@ -235,11 +226,7 @@ class COCODetection(DatasetBase):
         coco_ap = 0.0
         coco_ap50 = 0.0
         if len(detections_formatted_list) > 0:
-            detection_file = os.path.join(temp_dir, 'detection_results.json')
-            with open(detection_file, 'w') as det_fp:
-                json.dump(detections_formatted_list, det_fp)
-            #
-            cocoDet = self.coco_dataset.loadRes(detection_file)
+            cocoDet = self.coco_dataset.loadRes(detections_formatted_list)
             cocoEval = COCOeval(self.coco_dataset, cocoDet, iouType='bbox')
             cocoEval.evaluate()
             cocoEval.accumulate()
