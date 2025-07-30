@@ -237,6 +237,7 @@ class Detr3DTemporalDecoderLayer(BaseModule):
                  init_cfg=None,
                  batch_first=False,
                  with_cp=True,
+                 use_reentrant=False,
                  **kwargs):
         super().__init__(init_cfg)
 
@@ -303,6 +304,7 @@ class Detr3DTemporalDecoderLayer(BaseModule):
             self.norms.append(build_norm_layer(norm_cfg, self.embed_dims)[1])
 
         self.use_checkpoint = with_cp
+        self.use_reentrant = use_reentrant
 
     def _forward(self,
                 query,
@@ -439,22 +441,22 @@ class Detr3DTemporalDecoderLayer(BaseModule):
 
         if self.use_checkpoint and self.training:
             x = cp.checkpoint(
-                self._forward, 
+                self._forward,
                 query,
                 query_pos,
                 mlvl_feats,
-                temp_memory, 
+                temp_memory,
                 temp_pos,
                 reference_points,
                 spatial_flatten,
                 level_start_index,
-                pc_range, 
-                lidar2img, 
+                pc_range,
+                lidar2img,
                 img_metas,
                 attn_masks,
                 query_key_padding_mask,
                 key_padding_mask,
-                use_reentrant=False,
+                use_reentrant=self.use_reentrant,
                 )
         else:
             x = self._forward(

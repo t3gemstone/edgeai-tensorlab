@@ -46,8 +46,6 @@ model = dict(
         type='Petr3DDataPreprocessor',
         mean=[103.530, 116.280, 123.675],
         std=[57.375, 57.120, 58.395],
-        #mean=[0.0, 0.0, 0.0],
-        #std=[1.0, 1.0, 1.0],
         bgr_to_rgb=False, # False always
         pad_size_divisor=32),
     img_backbone=dict(
@@ -142,6 +140,7 @@ model = dict(
                     feedforward_channels=2048,
                     ffn_dropout=0.1,
                     with_cp=True,  ###use checkpoint to save memory
+                    use_reentrant=False,
                     operation_order=('self_attn', 'norm', 'cross_attn', 'norm',
                                      'ffn', 'norm')),
             )),
@@ -184,7 +183,7 @@ backend_args = None
 file_client_args = dict(backend='disk')
 
 ida_aug_conf = {
-        "resize_lim": (0.47, 0.55),
+        "resize_lim": (0.72, 0.80),  # for final dim of (640, 960)
         "final_dim": (640, 960),
         "bot_pct_lim": (0.0, 0.0),
         "rot_lim": (0.0, 0.0),
@@ -199,8 +198,6 @@ train_pipeline = [
     dict(type='ObjectRangeFilter', point_cloud_range=point_cloud_range),
     dict(type='ObjectNameFilter', classes=class_names),
     dict(type='ResizeCropFlipRotImage', data_aug_conf = ida_aug_conf),
-    #dict(type='NormalizeMultiviewImage', **img_norm_cfg),
-    #dict(type='PadMultiViewImage', size_divisor=32),
     dict(type='DownsampleQuantizeInstanceDepthmap', downsample=depthnet_config['stride'], depth_config=depthnet_config),
     dict(
         type='CustomPack3DDetInputs',
@@ -213,8 +210,6 @@ train_pipeline = [
 test_pipeline = [
     dict(type='LoadMultiViewImageFromFiles', to_float32=True),
     dict(type='ResizeCropFlipRotImage', data_aug_conf = ida_aug_conf, training=False),
-    #dict(type='NormalizeMultiviewImage', **img_norm_cfg),
-    #dict(type='PadMultiViewImage', size_divisor=32),
     dict(
         type='CustomMultiScaleFlipAug3D',
         img_scale=(1333, 800),
@@ -232,7 +227,7 @@ train_dataloader = dict(
     batch_size=batch_size,
     num_workers=1,
     drop_last=True,
-    sampler=dict(type='GroupSampler', shuffle=True),
+    sampler=dict(type='GroupEachSampleInBatchSampler', shuffle=True),
     dataset=dict(
         type=dataset_type,
         ann_file='nuscenes_strpetr_infos_train.pkl',
@@ -247,7 +242,6 @@ train_dataloader = dict(
         num_frame_losses=num_frame_losses,
         seq_split_num=2, # streaming video training
         seq_mode=True, # streaming video training
-        #collect_keys=collect_keys + ['img', 'prev_exists', 'img_metas'],
         collect_keys=collect_keys + ['img', 'prev_exists'],
         queue_length=queue_length,
         filter_empty_gt=False,
@@ -323,17 +317,14 @@ test_evaluator = val_evaluator
 
 
 optim_wrapper = dict(
-    # TODO Add Amp
-    # type='AmpOptimWrapper',
-    # loss_scale='dynamic',
-    optimizer=dict(type='AdamW', lr=2e-4, weight_decay=0.01),
+    optimizer=dict(type='AdamW', lr=1e-4, weight_decay=0.01),
     paramwise_cfg=dict(custom_keys={
         'img_backbone': dict(lr_mult=0.1),
     }),
     clip_grad=dict(max_norm=35, norm_type=2))
 
 
-num_iters = (28130 // batch_size) * num_epochs
+
 param_scheduler = [
     dict(
         type='LinearLR',
@@ -344,19 +335,16 @@ param_scheduler = [
     dict(
         type='CosineAnnealingLR',
         # TODO Figure out what T_max
-        begin=500,
-        end=num_iters,
-        T_max=num_iters,
-        by_epoch=False,
+        begin=0,
+        end=num_epochs,
+        T_max=num_epochs,
+        by_epoch=True,
     )
 ]
 
-#evaluation = dict(interval=num_iters_per_epoch*num_epochs, pipeline=test_pipeline)
 train_cfg = dict(max_epochs=num_epochs, val_interval=num_epochs)
 find_unused_parameters = True #### when use checkpoint, find_unused_parameters must be False
-#checkpoint_config = dict(interval=num_iters_per_epoch, max_keep_ckpts=3)
-#runner = dict(
-#    type='IterBasedRunner', max_iters=num_epochs * num_iters_per_epoch)
+
 default_hooks = dict(
     checkpoint=dict(
         type='CheckpointHook', interval=1, max_keep_ckpts=4, save_last=True))

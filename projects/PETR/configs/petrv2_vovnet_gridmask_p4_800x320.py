@@ -4,7 +4,6 @@ _base_ = [
     '../../../configs/_base_/schedules/cyclic-20e.py'
 ]
 
-#from mmdet3d.evaluation.metrics.nuscenes_metric import CustomNuScenesMetric
 
 backbone_norm_cfg = dict(type='LN', requires_grad=True)
 custom_imports = dict(imports=['projects.PETR.petr'])
@@ -51,7 +50,6 @@ model = dict(
         spec_name='V-99-eSE',
         norm_eval=True,
         frozen_stages=-1,
-        #init_cfg=dict(type='Pretrained', checkpoint='./pretrained_backbones/fcos3d_vovnet_imgbackbone-remapped.pth'),
         input_ch=3,
         out_features=(
             'stage4',
@@ -230,7 +228,7 @@ test_pipeline = [
         to_float32=True,
         pad_empty_sweeps=True,
         optimized_inference=optimized_inference,
-        sweep_range=[3,27]),
+        sweep_range=sweep_range),
     dict(
         type='ResizeCropFlipImage', data_aug_conf=ida_aug_conf,
         training=False),
@@ -312,14 +310,9 @@ val_evaluator = dict(
     backend_args=backend_args)
 test_evaluator = val_evaluator
 
-# Different from original PETR:
-# We don't use special lr for image_backbone
-# This seems won't affect model performance
+
 optim_wrapper = dict(
-    # TODO Add Amp
-    # type='AmpOptimWrapper',
-    # loss_scale='dynamic',
-    optimizer=dict(type='AdamW', lr=2e-4, weight_decay=0.01),
+    optimizer=dict(type='AdamW', lr=1e-4, weight_decay=0.01),
     paramwise_cfg=dict(custom_keys={
         'img_backbone': dict(lr_mult=0.1),
     }),
@@ -336,14 +329,12 @@ param_scheduler = [
         by_epoch=False),
     dict(
         type='CosineAnnealingLR',
-        # TODO Figure out what T_max
         T_max=num_epochs,
         by_epoch=True,
     )
 ]
 
 train_cfg = dict(max_epochs=num_epochs, val_interval=num_epochs)
-#checkpoint_config = dict(interval=1, max_keep_ckpts=3)
 
 default_hooks = dict(
     checkpoint=dict(
@@ -351,7 +342,5 @@ default_hooks = dict(
 
 find_unused_parameters = False
 
-# pretrain_path can be found here:
-# https://drive.google.com/file/d/1ABI5BoQCkCkP4B0pO5KBJ3Ni0tei0gZi/view
 load_from = './pretrained/fcos3d_vovnet_imgbackbone-remapped.pth'
 resume = False

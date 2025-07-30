@@ -78,6 +78,7 @@ class ResizeCropFlipRotImage(BaseTransform):
         results['depths'] = new_depths
         results['img'] = new_imgs
         results['lidar2img'] = [results['intrinsics'][i] @ results['extrinsics'][i] for i in range(len(results['extrinsics']))]
+        results['img_shape'] = [img.shape for img in results['img']]
 
         return results
 
@@ -188,7 +189,6 @@ class ResizeCropFlipRotImage(BaseTransform):
             newW, newH = resize_dims
             crop_h = int((1 - np.random.uniform(*self.data_aug_conf["bot_pct_lim"])) * newH) - fH
             crop_w = int(np.random.uniform(0, max(0, newW - fW)))
-            #crop_w = int(max(0, newW - fW) / 2)
             crop = (crop_w, crop_h, crop_w + fW, crop_h + fH)
             flip = False
             if self.data_aug_conf["rand_flip"] and np.random.choice([0, 1]):

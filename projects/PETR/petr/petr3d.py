@@ -334,11 +334,6 @@ class PETR3D(MVXTwoStageDetector):
             requires_grad = False
             return_losses = False
 
-            #data_t = dict()
-            #for key in data:
-            #    data_t[key] = data[key][:, i]
-            #data_t['img_feats'] = data_t['img_feats']
-
             # Squeeze img_feats
             img_feats = inputs['img_feats'][:, i]
 

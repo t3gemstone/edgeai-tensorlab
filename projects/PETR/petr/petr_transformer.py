@@ -686,6 +686,7 @@ class PETRTemporalDecoderLayer(BaseModule):
                  init_cfg=None,
                  batch_first=False,
                  with_cp=True,
+                 use_reentrant=False,
                  **kwargs):
 
         deprecated_args = dict(
@@ -766,6 +767,7 @@ class PETRTemporalDecoderLayer(BaseModule):
             self.norms.append(build_norm_layer(norm_cfg, self.embed_dims)[1])
 
         self.use_checkpoint = with_cp
+        self.use_reentrant = use_reentrant
 
     def _forward(self,
                 query,
@@ -905,7 +907,7 @@ class PETRTemporalDecoderLayer(BaseModule):
                 attn_masks,
                 query_key_padding_mask,
                 key_padding_mask,
-                use_reentrant=False
+                use_reentrant=self.use_reentrant
                 )
         else:
             x = self._forward(
