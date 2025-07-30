@@ -129,6 +129,7 @@ model = dict(
                     feedforward_channels=2048,
                     ffn_dropout=0.1,
                     with_cp=True,  ###use checkpoint to save memory
+                    use_reentrant=False,
                     operation_order=('self_attn', 'norm', 'cross_attn', 'norm',
                                      'ffn', 'norm')),
             )),
@@ -219,9 +220,9 @@ test_pipeline = [
 
 train_dataloader = dict(
     batch_size=batch_size,
-    num_workers=4,
+    num_workers=1,
     drop_last=True,
-    sampler=dict(type='GroupSampler', shuffle=True),
+    sampler=dict(type='GroupEachSampleInBatchSampler', shuffle=True),
     dataset=dict(
         type=dataset_type,
         ann_file='nuscenes_strpetr_infos_train.pkl',
@@ -321,7 +322,7 @@ optim_wrapper = dict(
     # TODO Add Amp
     # type='AmpOptimWrapper',
     # loss_scale='dynamic',
-    optimizer=dict(type='AdamW', lr=1e-4, weight_decay=0.01),
+    optimizer=dict(type='AdamW', lr=4e-4, weight_decay=0.01),
     paramwise_cfg=dict(custom_keys={
         'img_backbone': dict(lr_mult=0.1),
     }),
@@ -342,12 +343,10 @@ param_scheduler = [
         by_epoch=True)
 ]
 
-#evaluation = dict(interval=num_iters_per_epoch*num_epochs, pipeline=test_pipeline)
-train_cfg = dict(max_epochs=num_epochs, val_interval=num_epochs)
+
+train_cfg = dict(by_epoch=True, max_epochs=num_epochs, val_interval=num_epochs)
 find_unused_parameters = True #### when use checkpoint, find_unused_parameters must be False
-#checkpoint_config = dict(interval=num_iters_per_epoch, max_keep_ckpts=3)
-#runner = dict(
-#    type='IterBasedRunner', max_iters=num_epochs * num_iters_per_epoch)
+
 default_hooks = dict(
     checkpoint=dict(
         type='CheckpointHook', interval=1, max_keep_ckpts=4, save_last=True))
@@ -355,5 +354,4 @@ default_hooks = dict(
 custom_hooks = [
     dict(type='MlflowHook')
 ]
-#load_from = './checkpoints/streampetr/stream_petr_r50_flash_704_bs2_seq_428q_nui_60e.pth'
 resume_from = None

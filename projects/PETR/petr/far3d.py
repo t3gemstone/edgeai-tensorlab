@@ -261,14 +261,10 @@ class Far3D(MVXTwoStageDetector):
         Returns:
             dict: Losses of different branches.
         """
-        #for key in data:
-        #    if key != 'gt_depth':
-        #        data[key] = data[key][:, 0]
         rec_img = inputs['imgs']
         batch_img_metas = [ds.metainfo for ds in data_samples]
         rec_img_feats, depths = self.extract_feat(rec_img, True)
 
-        # TBA
         # collect info for forward_pts_train()
         gt_bboxes_3d = []
         gt_labels_3d = []

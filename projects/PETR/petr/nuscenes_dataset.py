@@ -40,43 +40,21 @@ class CustomNuScenesDataset(NuScenesDataset):
         """
         info = super().get_data_info(index)
 
-        #info = self.data_infos[index]
-        # standard protocal modified from SECOND.Pytorch
-        '''
-        input_dict = dict(
-            sample_idx=info['token'],
-            pts_filename=info['lidar_path'],
-            sweeps=info['camera_sweeps'],
-            timestamp=info['timestamp'] / 1e6,
-        )
-        '''
-
         info.update(
             dict(
                 #pts_filename=info['lidar_path'],
                 #sweeps=info['camera_sweeps'],
                 #timestamp=info['timestamp'],
-            ))        
+            ))
 
         if self.modality['use_camera']:
-            #image_paths = []
             lidar2img_rts = []
-            #intrinsics = []
-            #lidar2cam_rts = []
             img_timestamp = []
             for cam_type, cam_info in info['images'].items():
                 img_timestamp.append(cam_info['timestamp'])
                 #image_paths.append(cam_info['img_path'])
                 
                 # obtain lidar to image transformation matrix
-                '''
-                lidar2cam_r = np.linalg.inv(cam_info['sensor2lidar_rotation'])
-                lidar2cam_t = cam_info[
-                    'sensor2lidar_translation'] @ lidar2cam_r.T
-                lidar2cam_rt = np.eye(4)
-                lidar2cam_rt[:3, :3] = lidar2cam_r.T  
-                lidar2cam_rt[3, :3] = -lidar2cam_t
-                '''
                 lidar2cam_rt = cam_info['lidar2cam'] 
                 
                 intrinsic = cam_info['cam2img']
@@ -90,7 +68,7 @@ class CustomNuScenesDataset(NuScenesDataset):
                 ### If anyone want to use the extrinsics as sensor to lidar, 
                 ### please use np.linalg.inv(lidar2cam_rt.T) and modify the ResizeCropFlipImage and 
                 ### LoadMultiViewImageFromMultiSweepsFiles.
-                #lidar2cam_rts.append(lidar2cam_rt)  
+                #lidar2cam_rts.append(lidar2cam_rt)
                 lidar2img_rts.append(lidar2img_rt)
 
             info.update(
@@ -146,25 +124,6 @@ class CustomNuScenesDataset(NuScenesDataset):
 
         self._fully_initialized = True
 
-
-'''
-def invert_matrix_egopose_numpy(egopose):
-    """ Compute the inverse transformation of a 4x4 egopose numpy matrix."""
-    inverse_matrix = np.zeros((4, 4), dtype=np.float32)
-    rotation = egopose[:3, :3]
-    translation = egopose[:3, 3]
-    inverse_matrix[:3, :3] = rotation.T
-    inverse_matrix[:3, 3] = -np.dot(rotation.T, translation)
-    inverse_matrix[3, 3] = 1.0
-    return inverse_matrix
-
-def convert_egopose_to_matrix_numpy(rotation, translation):
-    transformation_matrix = np.zeros((4, 4), dtype=np.float32)
-    transformation_matrix[:3, :3] = rotation
-    transformation_matrix[:3, 3] = translation
-    transformation_matrix[3, 3] = 1.0
-    return transformation_matrix
-'''
 
 @DATASETS.register_module()
 class StreamNuScenesDataset(NuScenesDataset):
@@ -257,15 +216,6 @@ class StreamNuScenesDataset(NuScenesDataset):
                 else:
                     input_dict.update(dict(prev_exists=True))
 
-            """ pre_pipeline:
-            results['img_fields'] = []
-            results['bbox3d_fields'] = []
-            results['pts_mask_fields'] = []
-            results['pts_seg_fields'] = []
-            results['bbox_fields'] = []
-            results['mask_fields'] = []
-            results['seg_fields'] = []
-            """
             input_dict['box_type_3d'] = self.box_type_3d
             input_dict['box_mode_3d'] = self.box_mode_3d
 
@@ -293,19 +243,9 @@ class StreamNuScenesDataset(NuScenesDataset):
             dict: Testing data dict of the corresponding index.
         """
         input_dict = self.get_data_info(index)
-        """ pre_pipeline:
-        results['img_fields'] = []
-        results['bbox3d_fields'] = []
-        results['pts_mask_fields'] = []
-        results['pts_seg_fields'] = []
-        results['bbox_fields'] = []
-        results['mask_fields'] = []
-        results['seg_fields'] = []
-        """
         input_dict['box_type_3d'] = self.box_type_3d
         input_dict['box_mode_3d'] = self.box_mode_3d
 
-        #self.pre_pipeline(input_dict)
         example = self.pipeline(input_dict)
         return example
 
@@ -314,26 +254,11 @@ class StreamNuScenesDataset(NuScenesDataset):
         for key in self.collect_keys:
             if key != 'img':
                 queue[-1]['data_samples'].metainfo[key] = [each['data_samples'].metainfo[key] for each in queue]
-            """
-            if key != 'img_metas':
-                #queue[-1][key] = DC(torch.stack([each[key].data for each in queue]), cpu_only=False, stack=True, pad_dims=None)
-                queue[-1][key] = torch.stack([each[key].data for each in queue])
-            else:
-                #queue[-1][key] = DC([each[key].data for each in queue], cpu_only=True)
-                queue[-1][key] = [each[key].data for each in queue]
-            """
 
         if not self.test_mode:
             for key in ['gt_bboxes_3d', 'gt_labels_3d', 'gt_bboxes', 'gt_bboxes_labels', 'centers_2d', 'depths']:
                 queue[-1]['data_samples'].metainfo[key] = [each['data_samples'].metainfo[key] for each in queue]
-                """
-                if key == 'gt_bboxes_3d':
-                    #queue[-1][key] = DC([each[key].data for each in queue], cpu_only=True)
-                    queue[-1][key] = [each[key].data for each in queue]
-                else:
-                    #queue[-1][key] = DC([each[key].data for each in queue], cpu_only=False)
-                    queue[-1][key] = [each[key].data for each in queue]
-                """
+
         queue[-1]['inputs']['img'] = torch.stack(imgs_list)
         queue = queue[-1]
         return queue
@@ -447,7 +372,7 @@ class StreamNuScenesDataset(NuScenesDataset):
         while True:
             data = self.prepare_train_data(idx)
             if data is None:
-                idx = self._rand_another(idx)
+                idx = self._rand_another()
                 continue
             return data
 

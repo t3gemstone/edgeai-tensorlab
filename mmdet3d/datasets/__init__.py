@@ -25,7 +25,7 @@ from .transforms import (AffineResize, BackgroundPointsFilter, GlobalAlignment,
                          RandomShiftScale, Resize3D, VoxelBasedPointSampler)
 from .utils import get_loading_pipeline
 from .waymo_dataset import WaymoDataset
-from .sampler.group_sampler import GroupSampler
+from .sampler.group_sampler import GroupEachSampleInBatchSampler
 
 
 __all__ = [
