@@ -262,13 +262,7 @@ val_dataloader = dict(
         use_valid_flag=True,
         backend_args=backend_args))
 
-# Different from original PETR:
-# We don't use special lr for image_backbone
-# This seems won't affect model performance
 optim_wrapper = dict(
-    # TODO Add Amp
-    # type='AmpOptimWrapper',
-    # loss_scale='dynamic',
     optimizer=dict(type='AdamW', lr=2e-4, weight_decay=0.01),
     paramwise_cfg=dict(custom_keys={
         'img_backbone': dict(lr_mult=0.1),
@@ -286,7 +280,6 @@ param_scheduler = [
         by_epoch=False),
     dict(
         type='CosineAnnealingLR',
-        # TODO Figure out what T_max
         T_max=num_epochs,
         by_epoch=True,
     )
@@ -300,7 +293,5 @@ default_hooks = dict(
 
 find_unused_parameters = False
 
-# pretrain_path can be found here:
-# https://drive.google.com/file/d/1ABI5BoQCkCkP4B0pO5KBJ3Ni0tei0gZi/view
 load_from = './pretrained/fcos3d_vovnet_imgbackbone-remapped.pth'
 resume = False
