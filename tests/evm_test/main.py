@@ -279,7 +279,7 @@ elif (args.test_suite == "TIDL_UNIT_TEST"):
     # Clear the existing logs dir
     CHUNK_SIZE=50
     TEST_MAP = {}
-    if args.artifacts_folder is None:
+    if args.artifacts_folder is None or args.artifacts_folder == "":
         artifacts_dir = os.path.join(edgeai_benchmark_path, "tests", "tidl_unit", "work_dirs", "modelartifacts", f"{args.tensor_bits}bits")
     else:
         artifacts_dir = args.artifacts_folder

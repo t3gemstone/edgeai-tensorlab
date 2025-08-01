@@ -13,14 +13,14 @@ echo \
     --run_natc                  Run Inference with NATC flow control. Allowed values are (0,1). Default=0
     --run_ci                    Run Inference with CI flow control. Allowed values are (0,1). Default=0
     --run_target                Run Inference on TARGET. Allowed values are (0,1). Default=0
-    --save_model_artifacts      Whether to save compiled artifacts or not. Allowed values are (0,1). Default=0
-    --save_model_artifacts_dir  Path to save model artifacts if save_model_artifacts is 1. Default is work_dirs/modelartifacts
+    --work_dir                  Full path to save model artifacts during compilation. Same will be used to fetch compiled model artifacts during inference
+                                Default is work_dirs/modelartifacts
+    --save_model_artifacts      Whether to preserve compiled artifacts or not in work_dir. Allowed values are (0,1). Default=0
     --temp_buffer_dir           Path to redirect temporary buffers for x86 runs. Default is /dev/shm
     --nmse_threshold            Normalized Mean Squared Error (NMSE) thresehold for inference output. Default: 0.5
     --operators                 List of operators (space separated string) to run. By default every operator under tidl_unit_test_data/operators
     --runtimes                  List of runtimes (space separated string) to run tests. Allowed values are (onnxrt, tvmrt). Default=onnxrt
     --tidl_tools_path           Path of tidl tools tarball (named as tidl_tools.tar.gz)
-    --compiled_artifacts_path   Path of compiled model artifacts. Will be used only for TARGET run.
 
     Example:
         ./run_operator_test.sh --SOC=AM68A --run_ref=1 --run_natc=0 --run_ci=0 --save_model_artifacts=1 --operators=\"Add Mul Sqrt\" --runtimes=\"onnxrt\"
@@ -35,13 +35,12 @@ run_ref="0"
 run_natc="0"
 run_ci="0"
 run_target="0"
+work_dir=""
 save_model_artifacts="0"
-save_model_artifacts_dir=""
 temp_buffer_dir="/dev/shm"
 OPERATORS=()
 RUNTIMES=()
 tidl_tools_path=""
-compiled_artifacts_path=""
 nmse_threshold=""
 
 while [ $# -gt 0 ]; do
@@ -67,20 +66,17 @@ while [ $# -gt 0 ]; do
         --run_target=*)
         run_target="${1#*=}"
         ;;
+        --work_dir=*)
+        work_dir="${1#*=}"
+        ;;
         --save_model_artifacts=*)
         save_model_artifacts="${1#*=}"
-        ;;
-        --save_model_artifacts_dir=*)
-        save_model_artifacts_dir="${1#*=}"
         ;;
         --temp_buffer_dir=*)
         temp_buffer_dir="${1#*=}"
         ;;
         --tidl_tools_path=*)
         tidl_tools_path="${1#*=}"
-        ;;
-        --compiled_artifacts_path=*)
-        compiled_artifacts_path="${1#*=}"
         ;;
         --nmse_threshold=*)
         nmse_threshold="${1#*=}"
@@ -111,9 +107,6 @@ for runtime in $runtimes; do
   RUNTIMES+=("$runtime")
 done
 
-if [ "$run_ref" == "0" ] && [ "$run_natc" == "0" ] && [ "$run_ci" == "0" ] && [ "$run_target" == "0" ]; then
-    run_ref="1"
-fi
 
 # Verify arguments
 if [ "$SOC" != "AM62A" ] && [ "$SOC" != "AM67A" ] && [ "$SOC" != "AM68A" ] && [ "$SOC" != "AM69A" ] && [ "$SOC" != "TDA4VM" ]; then
@@ -164,27 +157,11 @@ if [ "$save_model_artifacts" != "1" ] && [ "$save_model_artifacts" != "0" ]; the
     echo "         Allowed values are (0,1)"
     exit 1
 fi
-if [ "$save_model_artifacts" == "1" ] && [ "$save_model_artifacts_dir" != "" ]; then
-    mkdir -p $save_model_artifacts_dir
+if [ "$work_dir" != "" ]; then
+    mkdir -p $work_dir
     if [ "$?" != "0" ]; then
-        echo "[WARNING]: Could not create $save_model_artifacts_dir. Using default location to save model artifacts"
-        save_model_artifacts_dir=""
-    fi
-fi
-
-if [ "$compiled_artifacts_path" != "" ]; then
-    if [ "$compile_without_nc" == "1" ] || [ "$compile_with_nc" == "1" ]; then
-        echo "[WARNING]: Using $compiled_artifacts_path for compiled model artifacts, model compilation will not happen"
-        compile_without_nc="0"
-        compile_with_nc="0"
-    fi
-    if [ "$run_target" != "1" ]; then
-        echo "[ERROR]: Compiled model artofacts path: $compiled_artifacts_path is given. TARGET run is expected. Exiting"
-        exit 1
-    fi
-    if [ ! -d $compiled_artifacts_path ]; then
-        echo "[ERROR]: $compiled_artifacts_path does not exist. Exiting"
-        exit 1
+        echo "[WARNING]: Could not create $work_dir. Using default location for model artifacts"
+        work_dir=""
     fi
 fi
 
@@ -208,12 +185,13 @@ echo "run_ref                   = $run_ref"
 echo "run_natc                  = $run_natc"
 echo "run_ci                    = $run_ci"
 echo "run_target                = $run_target"
+echo "work_dir                  = $work_dir"
 echo "save_model_artifacts      = $save_model_artifacts"
-echo "save_model_artifacts_dir  = $save_model_artifacts_dir"
 echo "temp_buffer_dir           = $temp_buffer_dir"
 
 current_dir="$PWD"
 path_edge_ai_benchmark="$current_dir/../../.."
+default_work_dir="$current_dir/../work_dirs/modelartifacts"
 cd "$path_edge_ai_benchmark" 
 source ./run_set_env.sh "$SOC"
 
@@ -247,7 +225,7 @@ export LD_LIBRARY_PATH="${TIDL_TOOLS_PATH}"
 echo "TIDL_TOOLS_PATH=${TIDL_TOOLS_PATH}"
 echo "LD_LIBRARY_PATH=${LD_LIBRARY_PATH}"
 
-if [ "$compiled_artifacts_path" == "" ]; then
+if [ "$work_dir" == "" ] || [ $compile_with_nc == "1" ] || [ "$compile_without_nc" == "1" ]; then
     operators_path=$path_edge_ai_benchmark/tests/tidl_unit/tidl_unit_test_data/operators/
     if [ -z "$OPERATORS" ]; then
         for D in $(find $operators_path -mindepth 1 -maxdepth 1 -type d) ; do
@@ -267,7 +245,11 @@ if [ "$compiled_artifacts_path" == "" ]; then
         OPERATORS=("${temp_array[@]}")
     fi
 else
-    operators_path=$compiled_artifacts_path
+    if [ ! -d $work_dir ]; then
+        echo "[ERROR]: $work_dir does not exist.. Exiting"
+        exit 1
+    fi
+    operators_path=$work_dir
     temp_operators=()
     for D in $(find $operators_path -mindepth 1 -maxdepth 1 -type d) ; do
         name=`basename $D`
@@ -283,7 +265,7 @@ else
             if [[ " ${temp_operators[@]} " =~ " ${item} " ]]; then
                 intersection+=("$item")
             else
-                echo "[WARNING]: Artifacts for $item not present in $compiled_artifacts_path. Skipping it."
+                echo "[WARNING]: Artifacts for $item not present in $work_dir. Skipping it."
             fi
 
         done
@@ -331,12 +313,13 @@ do
 
         if [ "$compile_without_nc" == "1" ]; then
             echo "########################################## $operator TEST (WITHOUT NC) ######################################"
-            rm -rf work_dirs/modelartifacts/8bits/${operator}_*
+            rm -rf ${work_dir}/${operator}_*
+            rm -rf $default_work_dir
 
             rm -rf "$TIDL_TOOLS_PATH/ti_cnnperfsim.out"
 
             rm -rf logs/*
-            ./run_test.sh --test_suite=operator --tests=$operator --run_infer=0 --temp_buffer_dir=$temp_buffer_dir --runtime=$runtime
+            ./run_test.sh --test_suite=operator --tests=$operator --run_infer=0 --temp_buffer_dir=$temp_buffer_dir --runtime=$runtime --work_dir=$work_dir
             cp logs/*.html "$logs_path/compile_without_nc.html"
             if [ "$temp_buffer_dir" != "/dev/shm" ]; then
                 rm -rf $temp_buffer_dir/vashm_buff*
@@ -344,7 +327,7 @@ do
 
             rm -rf logs/*
             if [ "$run_ref" == "1" ]; then
-                ./run_test.sh --test_suite=operator --tests=$operator --run_compile=0 --temp_buffer_dir=$temp_buffer_dir --nmse_threshold=$op_nmse_threshold --runtime=$runtime
+                ./run_test.sh --test_suite=operator --tests=$operator --run_compile=0 --temp_buffer_dir=$temp_buffer_dir --nmse_threshold=$op_nmse_threshold --runtime=$runtime --work_dir=$work_dir
                 cp logs/*.html "$logs_path/infer_ref_without_nc.html"
                 if [ "$temp_buffer_dir" != "/dev/shm" ]; then
                     rm -rf $temp_buffer_dir/vashm_buff*
@@ -366,12 +349,13 @@ do
 
         if [ "$compile_with_nc" == "1" ]; then
             echo "########################################## $operator TEST (WITH NC) ######################################"
-            rm -rf work_dirs/modelartifacts/8bits/${operator}_*
+            rm -rf ${work_dir}/${operator}_*
+            rm -rf $default_work_dir
 
             cp -rp "$TIDL_TOOLS_PATH/../ti_cnnperfsim.out" "$TIDL_TOOLS_PATH"
 
             rm -rf logs/*
-            ./run_test.sh --test_suite=operator --tests=$operator --run_infer=0 --temp_buffer_dir=$temp_buffer_dir --nmse_threshold=$op_nmse_threshold --runtime=$runtime
+            ./run_test.sh --test_suite=operator --tests=$operator --run_infer=0 --temp_buffer_dir=$temp_buffer_dir --nmse_threshold=$op_nmse_threshold --runtime=$runtime --work_dir=$work_dir
             cp logs/*.html "$logs_path/compile_with_nc.html"
             if [ "$temp_buffer_dir" != "/dev/shm" ]; then
                 rm -rf $temp_buffer_dir/vashm_buff*
@@ -379,7 +363,7 @@ do
 
             rm -rf logs/*
             if [ "$run_ref" == "1" ]; then
-                ./run_test.sh --test_suite=operator --tests=$operator --run_compile=0 --flow_ctrl=1 --temp_buffer_dir=$temp_buffer_dir --nmse_threshold=$op_nmse_threshold --runtime=$runtime
+                ./run_test.sh --test_suite=operator --tests=$operator --run_compile=0 --flow_ctrl=1 --temp_buffer_dir=$temp_buffer_dir --nmse_threshold=$op_nmse_threshold --runtime=$runtime --work_dir=$work_dir
                 cp logs/*.html "$logs_path/infer_ref_with_nc.html"
                 if [ "$temp_buffer_dir" != "/dev/shm" ]; then
                     rm -rf $temp_buffer_dir/vashm_buff*
@@ -388,7 +372,7 @@ do
 
             rm -rf logs/*
             if [ "$run_natc" == "1" ]; then
-                ./run_test.sh --test_suite=operator --tests=$operator --run_compile=0 --flow_ctrl=12 --temp_buffer_dir=$temp_buffer_dir --nmse_threshold=$op_nmse_threshold --runtime=$runtime
+                ./run_test.sh --test_suite=operator --tests=$operator --run_compile=0 --flow_ctrl=12 --temp_buffer_dir=$temp_buffer_dir --nmse_threshold=$op_nmse_threshold --runtime=$runtime --work_dir=$work_dir
                 cp logs/*.html "$logs_path/infer_natc_with_nc.html"
                 if [ "$temp_buffer_dir" != "/dev/shm" ]; then
                     rm -rf $temp_buffer_dir/vashm_buff*
@@ -397,7 +381,7 @@ do
 
             rm -rf logs/*
             if [ "$run_ci" == "1" ]; then
-                ./run_test.sh --test_suite=operator --tests=$operator --run_compile=0 --flow_ctrl=0 --temp_buffer_dir=$temp_buffer_dir --nmse_threshold=$op_nmse_threshold --runtime=$runtime
+                ./run_test.sh --test_suite=operator --tests=$operator --run_compile=0 --flow_ctrl=0 --temp_buffer_dir=$temp_buffer_dir --nmse_threshold=$op_nmse_threshold --runtime=$runtime --work_dir=$work_dir
                 cp logs/*.html "$logs_path/infer_ci_with_nc.html"
                 if [ "$temp_buffer_dir" != "/dev/shm" ]; then
                     rm -rf $temp_buffer_dir/vashm_buff*
@@ -410,7 +394,7 @@ do
 
                 extra_args="--nmse-threshold $op_nmse_threshold"
 
-                python3 main.py --test_suite=TIDL_UNIT_TEST --soc=$SOC --uart=/dev/am68a-sk-00-usb2 --pc_ip=192.168.46.0 --evm_local_ip=192.168.46.100 --reboot_type=hard --relay_type=ANEL --relay_trigger_mechanism=EXE --relay_exe_path=/work/ti/UNIT_TEST/net-pwrctrl.exe --relay_ip_address=10.24.69.252 --relay_power_port=8 --dataset_dir=/work/ti/UNIT_TEST/tidl_models/unitTest/onnx/tidl_unit_test_assets --operators=$operator --extra_args=$extra_args
+                python3 main.py --test_suite=TIDL_UNIT_TEST --soc=$SOC --uart=/dev/am68a-sk-00-usb2 --pc_ip=192.168.46.0 --evm_local_ip=192.168.46.100 --reboot_type=hard --relay_type=ANEL --relay_trigger_mechanism=EXE --relay_exe_path=/work/ti/UNIT_TEST/net-pwrctrl.exe --relay_ip_address=10.24.69.252 --relay_power_port=8 --dataset_dir=/work/ti/UNIT_TEST/tidl_models/unitTest/onnx/tidl_unit_test_assets --operators=$operator --artifacts_folder=$work_dir --extra_args=$extra_args
                 cd -
                 cp logs/*.html "$logs_path"
                 cd $logs_path
@@ -423,16 +407,37 @@ do
                 rm -rf temp
                 cd $path_edge_ai_benchmark/tests/tidl_unit
             fi
-
-            if [ "$save_model_artifacts" == "0" ]; then
-                rm -rf work_dirs/modelartifacts/8bits/${operator}_*
-            elif [ "$save_model_artifacts_dir" != "" ]; then
-                mv work_dirs/modelartifacts/8bits/${operator}_* $save_model_artifacts_dir
-            fi
         fi
 
-        if [ "$compiled_artifacts_path" != "" ]; then
-            echo "[INFO]: Using $compiled_artifacts_path for model artifacts to run inference on TARGET"
+        # Run inference using artifacts present under work_dir
+        if [ "$compile_without_nc" == "0" ] && [ "$compile_with_nc" == "0" ]; then
+
+            rm -rf logs/*
+            if [ "$run_ref" == "1" ]; then
+                ./run_test.sh --test_suite=operator --tests=$operator --run_compile=0 --flow_ctrl=1 --temp_buffer_dir=$temp_buffer_dir --nmse_threshold=$op_nmse_threshold --runtime=$runtime --work_dir=$work_dir
+                cp logs/*.html "$logs_path/infer_ref.html"
+                if [ "$temp_buffer_dir" != "/dev/shm" ]; then
+                    rm -rf $temp_buffer_dir/vashm_buff*
+                fi
+            fi
+
+            rm -rf logs/*
+            if [ "$run_natc" == "1" ]; then
+                ./run_test.sh --test_suite=operator --tests=$operator --run_compile=0 --flow_ctrl=12 --temp_buffer_dir=$temp_buffer_dir --nmse_threshold=$op_nmse_threshold --runtime=$runtime --work_dir=$work_dir
+                cp logs/*.html "$logs_path/infer_natc.html"
+                if [ "$temp_buffer_dir" != "/dev/shm" ]; then
+                    rm -rf $temp_buffer_dir/vashm_buff*
+                fi
+            fi
+
+            rm -rf logs/*
+            if [ "$run_ci" == "1" ]; then
+                ./run_test.sh --test_suite=operator --tests=$operator --run_compile=0 --flow_ctrl=0 --temp_buffer_dir=$temp_buffer_dir --nmse_threshold=$op_nmse_threshold --runtime=$runtime --work_dir=$work_dir
+                cp logs/*.html "$logs_path/infer_ci.html"
+                if [ "$temp_buffer_dir" != "/dev/shm" ]; then
+                    rm -rf $temp_buffer_dir/vashm_buff*
+                fi
+            fi
 
             rm -rf logs/*
             if [ "$run_target" == "1" ]; then
@@ -440,7 +445,7 @@ do
 
                 extra_args="--nmse-threshold $op_nmse_threshold"
 
-                python3 main.py --test_suite=TIDL_UNIT_TEST --soc=$SOC --uart=/dev/am68a-sk-00-usb2 --pc_ip=192.168.46.0 --evm_local_ip=192.168.46.100 --reboot_type=hard --relay_type=ANEL --relay_trigger_mechanism=EXE --relay_exe_path=/work/ti/UNIT_TEST/net-pwrctrl.exe --relay_ip_address=10.24.69.252 --relay_power_port=8 --dataset_dir=/work/ti/UNIT_TEST/tidl_models/unitTest/onnx/tidl_unit_test_assets --operators=$operator --artifacts_folder=$compiled_artifacts_path --extra_args=$extra_args
+                python3 main.py --test_suite=TIDL_UNIT_TEST --soc=$SOC --uart=/dev/am68a-sk-00-usb2 --pc_ip=192.168.46.0 --evm_local_ip=192.168.46.100 --reboot_type=hard --relay_type=ANEL --relay_trigger_mechanism=EXE --relay_exe_path=/work/ti/UNIT_TEST/net-pwrctrl.exe --relay_ip_address=10.24.69.252 --relay_power_port=8 --dataset_dir=/work/ti/UNIT_TEST/tidl_models/unitTest/onnx/tidl_unit_test_assets --operators=$operator --artifacts_folder=$work_dir --extra_args=$extra_args
                 cd -
                 cp logs/*.html "$logs_path"
                 cd $logs_path
@@ -448,11 +453,16 @@ do
                 mkdir -p temp
                 mv ./*_Chunk_*.html temp
                 cd temp
-                pytest_html_merger -i ./ -o ../infer_target_with_nc.html
+                pytest_html_merger -i ./ -o ../infer_target.html
                 cd ../
                 rm -rf temp
                 cd $path_edge_ai_benchmark/tests/tidl_unit
             fi
+        fi
+
+        if [ "$save_model_artifacts" == "0" ]; then
+            rm -rf ${work_dir}/${operator}_*
+            rm -rf $default_work_dir
         fi
     done
 
