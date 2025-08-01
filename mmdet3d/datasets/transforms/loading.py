@@ -874,8 +874,11 @@ class LoadAnnotations3D(LoadAnnotations):
         Returns:
             dict: The dict containing loaded 3D bounding box annotations.
         """
-
-        results['gt_bboxes_3d'] = results['ann_info']['gt_bboxes_3d']
+        # For VAD
+        if 'eval_ann_info' in results:
+            results['gt_bboxes_3d'] = results['eval_ann_info']['gt_bboxes_3d']
+        else:
+            results['gt_bboxes_3d'] = results['ann_info']['gt_bboxes_3d']
         return results
 
     def _load_bboxes_depth(self, results: dict) -> dict:
@@ -887,9 +890,13 @@ class LoadAnnotations3D(LoadAnnotations):
         Returns:
             dict: The dict containing loaded 2.5D bounding box annotations.
         """
-
-        results['depths'] = results['ann_info']['depths']
-        results['centers_2d'] = results['ann_info']['centers_2d']
+        # For VAD
+        if 'eval_ann_info' in results:
+            results['depths'] = results['eval_ann_info']['depths']
+            results['centers_2d'] = results['eval_ann_info']['centers_2d']
+        else:
+            results['depths'] = results['ann_info']['depths']
+            results['centers_2d'] = results['ann_info']['centers_2d']
         return results
 
     def _load_labels_3d(self, results: dict) -> dict:
@@ -901,8 +908,11 @@ class LoadAnnotations3D(LoadAnnotations):
         Returns:
             dict: The dict containing loaded label annotations.
         """
-
-        results['gt_labels_3d'] = results['ann_info']['gt_labels_3d']
+        # For VAD
+        if 'eval_ann_info' in results:
+            results['gt_labels_3d'] = results['eval_ann_info']['gt_labels_3d']
+        else:
+            results['gt_labels_3d'] = results['ann_info']['gt_labels_3d']
         return results
 
     def _load_attr_labels(self, results: dict) -> dict:
@@ -914,7 +924,11 @@ class LoadAnnotations3D(LoadAnnotations):
         Returns:
             dict: The dict containing loaded label annotations.
         """
-        results['attr_labels'] = results['ann_info']['attr_labels']
+        # For VAD
+        if 'eval_ann_info' in results:
+            results['attr_labels'] = results['eval_ann_info']['attr_labels']
+        else:
+            results['attr_labels'] = results['ann_info']['attr_labels']
         return results
 
     def _load_masks_3d(self, results: dict) -> dict:

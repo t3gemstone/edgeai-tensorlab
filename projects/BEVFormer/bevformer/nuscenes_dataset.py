@@ -1,19 +1,19 @@
 import copy
-
-import numpy as np
-from mmdet3d.registry import DATASETS
-from mmdet3d.datasets import NuScenesDataset
-from mmengine.logging import print_log
-import mmcv
 from os import path as osp
-import torch
-from nuscenes.eval.common.utils import quaternion_yaw, Quaternion
-from .nuscnes_eval import NuScenesEval_custom
 import random
 
-
-from scipy.spatial import transform
+import numpy as np
+from mmengine import logging
+from mmengine.logging import print_log
+import torch
+from nuscenes.eval.common.utils import quaternion_yaw, Quaternion
 from pyquaternion import Quaternion
+from scipy.spatial import transform
+from mmdet3d.registry import DATASETS
+from mmdet3d.datasets import NuScenesDataset
+
+from .nuscnes_eval import NuScenesEval_custom
+
 
 
 @DATASETS.register_module()
@@ -191,6 +191,7 @@ class CustomNuScenesDataset(NuScenesDataset):
 
         self._fully_initialized = True
 
+    '''
     def _evaluate_single(self,
                          result_path,
                          logger=None,
@@ -248,6 +249,7 @@ class CustomNuScenesDataset(NuScenesDataset):
         detail['{}/NDS'.format(metric_prefix)] = metrics['nd_score']
         detail['{}/mAP'.format(metric_prefix)] = metrics['mean_ap']
         return detail
+    '''
 
     def __getitem__(self, idx: int) -> dict:
         """Get the idx-th image and data information of dataset after
@@ -283,7 +285,7 @@ class CustomNuScenesDataset(NuScenesDataset):
         if self.test_mode:
             data = self.prepare_data(idx)
             if data is None:
-                raise Exception('Test time pipline should not get `None` '
+                raise ValueError('Test time pipline should not get `None` '
                                 'data_sample')
             return data
 

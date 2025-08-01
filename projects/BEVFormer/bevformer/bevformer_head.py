@@ -127,8 +127,9 @@ class BEVFormerHead(AnchorFreeHead):
         self.real_h = self.pc_range[4] - self.pc_range[1]
         self.num_cls_fcs = num_cls_fcs - 1
 
-
         super(AnchorFreeHead, self).__init__(init_cfg=init_cfg)
+
+        # From DETRHeae.init()
         self.bg_cls_weight = 0
         self.sync_cls_avg_factor = sync_cls_avg_factor
         class_weight = loss_cls.get('class_weight', None)
@@ -190,6 +191,8 @@ class BEVFormerHead(AnchorFreeHead):
             f' and {num_feats}.'
 
         self._init_layers()
+        # End of DETRHead.init()
+
         self.code_weights = nn.Parameter(torch.tensor(
             self.code_weights, requires_grad=False), requires_grad=False)
 
@@ -370,7 +373,8 @@ class BEVFormerHead(AnchorFreeHead):
         #    else:
         #        reference.append(inter_references[lvl - 1])
         #reference=torch.cat(reference, dim=0)
-        reference=torch.cat((init_reference, inter_references[0:5]), dim=0)
+        length = len(self.reg_branches) - 1
+        reference=torch.cat((init_reference, inter_references[0:length]), dim=0)
         reference = inverse_sigmoid(reference)
 
         #batch_hs = hs.squeeze(1)
@@ -414,7 +418,7 @@ class BEVFormerHead(AnchorFreeHead):
 
         # 5. Linear
         out  = torch.bmm(out, reg_linear3_wgt)
-        out  = torch.add(out, reg_linear3_bias)
+        out  = torch.add(out, reg_linear3_bias) # out: [6x900x10]
 
         """
         out[..., 0:1] = ((out[..., 0:1] + reference[..., 0:1]).sigmoid() * (self.pc_range[3] -

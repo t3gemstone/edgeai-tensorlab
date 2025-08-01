@@ -355,6 +355,8 @@ class FastBEV(BaseDetector):
                 egocurr2global = np.array(img_meta['ego2global'])
                 egoadj2global = prev_img_meta['ego2global']
                 lidar2ego = np.array(img_meta['lidar2ego'])
+                # The frames in the same scene have the same lidar2ego
+                # But it is safer to use prev_img_meta['lidar2ego'] for the adjacent frame
                 lidaradj2lidarcurr = np.linalg.inv(lidar2ego) @ np.linalg.inv(egocurr2global) \
                     @ egoadj2global @ lidar2ego
 
@@ -404,7 +406,8 @@ class FastBEV(BaseDetector):
             # precompute projection
             for seq_id in range(n_times):
                 img_meta = img_meta_list[seq_id]
-
+                # projection [6, 3, 4]:
+                #     Lidar to image feature transforms for 6 images
                 projection = self._compute_projection(
                     img_meta, stride_i, noise=self.extrinsic_noise).to(img.device)
 

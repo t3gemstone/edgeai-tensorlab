@@ -264,8 +264,8 @@ def add_frame(sample_data, nusc, l2e_RT, e2g_RT, out_dir):
     sweep_cam['sensor2ego_rotation']  = calibrated_sensor_record['rotation']
     sweep_cam['cam_intrinsic'] = calibrated_sensor_record['camera_intrinsic']
 
-    l2e_r_s = sweep_cam['sensor2ego_rotation']
-    l2e_t_s = sweep_cam['sensor2ego_translation']
+    l2e_r_s = sweep_cam['sensor2ego_rotation']    # c2e
+    l2e_t_s = sweep_cam['sensor2ego_translation'] # c2e
     e2g_r_s = sweep_cam['ego2global_rotation']
     e2g_t_s = sweep_cam['ego2global_translation']
 
@@ -296,7 +296,7 @@ def add_frame(sample_data, nusc, l2e_RT, e2g_RT, out_dir):
     sweep_cam['sensor2lidar_rotation'] = RT_p_c[0:3, 0:3]
     sweep_cam['sensor2lidar_translation'] = RT_p_c[0:3, 3]
 
-    lidar2cam_r = np.linalg.inv(sweep_cam['sensor2lidar_rotation'])
+    lidar2cam_r = np.linalg.inv(sweep_cam['sensor2lidar_rotation'])  # cl2pc
     lidar2cam_t = sweep_cam['sensor2lidar_translation'] @ lidar2cam_r.T
     lidar2cam_rt = np.eye(4)
     #lidar2cam_rt[:3, :3] = lidar2cam_r.T  # it is transposed for multiplication with List (1x3 vector)?
@@ -326,6 +326,7 @@ def generate_camera_sweeps(info, nusc, out_dir):
     # Nummber of previous key frames
     # Nummber of sweep frames between two key frame
     num_prev = 1
+    # num_sweep = 0 means that only key frames are used.
     num_sweep = 0
 
     camera_types = [
@@ -353,6 +354,7 @@ def generate_camera_sweeps(info, nusc, out_dir):
     # Previous sweep frame
     for i in range(num_prev):
         # Justify the first frame of a scene
+        # For the first key frame of a scene, there is no previous frame.
         if sample['prev'] == '':
             break
 

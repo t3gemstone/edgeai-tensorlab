@@ -148,7 +148,7 @@ class LoadMultiViewImageFromMultiSweepsFiles(LoadMultiViewImageFromFiles):
                     results['cam2img'].append(sweep[sensor]['cam2img'])
                     results['lidar2cam'].append(sweep[sensor]['lidar2cam'])
         results['img'] = sweep_imgs_list
-        results['delta_timestamp'] = timestamp_imgs_list  
+        results['delta_timestamp'] = timestamp_imgs_list
 
         return results
 

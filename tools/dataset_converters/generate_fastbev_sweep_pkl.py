@@ -77,6 +77,8 @@ def add_adj_info_nuscenes(root_path, version):
                         #if sd_adj['is_key_frame'] is False:
                         #    continue
                         # check if scene token are identical - add only frames with the scame scene token
+                        # Upon the observance of scene change, sample_data[adj] is expected to be empty
+                        # But it seems to be not the case for non-key frames. So check scene token.
                         adj_sample = nuscenes.get('sample', sd_adj['sample_token'])
                         if sample['scene_token'] != adj_sample['scene_token']:
                             break
