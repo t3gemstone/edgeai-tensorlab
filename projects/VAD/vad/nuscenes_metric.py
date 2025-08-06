@@ -55,13 +55,8 @@ def output_to_nusc_box(detection):
     # TODO: check whether this is necessary
     # with dir_offset & dir_limit in the head
 
-    # Do-Kyoung: Do we need it?
-    box_yaw = -box_yaw - np.pi / 2
     box_list = []
-
-    # Do-Kyoung: Do we need to swap the box dims?
-    #nus_box_dims = box_dims[:, [1, 0, 2]]
-    nus_box_dims = box_dims
+    nus_box_dims = box_dims[:, [1, 0, 2]]
 
     for i in range(len(box3d)):
         quat = pyquaternion.Quaternion(axis=[0, 0, 1], radians=box_yaw[i])
@@ -725,45 +720,3 @@ class VADNuScenesMetric(NuScenesMetric):
 
         return detail
 
-    '''
-    def compute_metrics(self, results: List[dict]) -> Dict[str, float]:
-        """Compute the metrics from processed results.
-
-        Args:
-            results (List[dict]): The processed results of each batch.
-
-        Returns:
-            Dict[str, float]: The computed metrics. The keys are the names of
-            the metrics, and the values are corresponding results.
-        """
-        logger: MMLogger = MMLogger.get_current_instance()
-
-        classes = self.dataset_meta['classes']
-        self.version = self.dataset_meta['version']
-        # load annotations
-        self.data_infos = mmengine.load(
-            self.ann_file, backend_args=self.backend_args)['data_list']
-
-        # sort data_infos
-        self.data_infos = list(sorted(self.data_infos, key=lambda e: e['timestamp']))
-
-        result_dict, tmp_dir = self.format_results(results, classes,
-                                                   self.jsonfile_prefix)
-
-        metric_dict = {}
-
-        if self.format_only:
-            logger.info(
-                f'results are saved in {osp.basename(self.jsonfile_prefix)}')
-            return metric_dict
-
-        for metric in self.metrics:
-            ap_dict = self.nus_evaluate(
-                result_dict, classes=classes, metric=metric, logger=logger)
-            for result in ap_dict:
-                metric_dict[result] = ap_dict[result]
-
-        if tmp_dir is not None:
-            tmp_dir.cleanup()
-        return metric_dict
-    '''

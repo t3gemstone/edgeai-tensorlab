@@ -332,25 +332,6 @@ class VAD(MVXTwoStageDetector):
             result_dict['pts_bbox'] = pts_bbox
             result_dict['metric_results'] = metric_dict
 
-
-        """
-        ret_list = []
-        for i in range(len(bbox_pts)):
-            results = InstanceData()
-            preds = bbox_pts[i]
-            results.bboxes_3d = preds['bboxes_3d']
-            results.scores_3d = preds['scores_3d']
-            results.labels_3d = preds['labels_3d']
-            # change box dim and yaw
-            #    nus_box_dims = box_dims[:, [0, 1, 2]]
-            #    box_yaw = -box_yaw - np.pi/2
-            # It could be removed with a trained model using new pickle file
-            #results.bboxes_3d.tensor = results.bboxes_3d.tensor[:, [0, 1, 2, 4, 3, 5, 6, 7, 8]]
-            #results.bboxes_3d.tensor[:, 6] = -results.bboxes_3d.tensor[:, 6] - np.pi/2
-            ret_list.append(results)
-        """
-
-
         # During inference, we save the BEV features and ego motion of each timestamp.
         self.prev_frame_info['prev_pos'] = tmp_pos
         self.prev_frame_info['prev_angle'] = tmp_angle
@@ -365,20 +346,7 @@ class VAD(MVXTwoStageDetector):
     def forward_pts_train(self,
                           pts_feats,
                           batch_input_metas,
-                          prev_bev=None,
-                          #gt_bboxes_3d,
-                          #gt_labels_3d,
-                          #map_gt_bboxes_3d,
-                          #map_gt_labels_3d,
-                          #gt_bboxes_ignore=None,
-                          #map_gt_bboxes_ignore=None,
-                          #ego_his_trajs=None,
-                          #ego_fut_trajs=None,
-                          #ego_fut_masks=None,
-                          #ego_fut_cmd=None,
-                          #ego_lcf_feat=None,
-                          #gt_attr_labels=None
-                          ):
+                          prev_bev=None):
         """Forward function'
         Args:
             pts_feats (list[torch.Tensor]): Features of point cloud branch
@@ -727,7 +695,7 @@ class VAD(MVXTwoStageDetector):
                 metric_dict['plan_L2_{}s'.format(i+1)] = 0.0
                 metric_dict['plan_obj_col_{}s'.format(i+1)] = 0.0
                 metric_dict['plan_obj_box_col_{}s'.format(i+1)] = 0.0
-            
+
         return metric_dict
 
     def set_epoch(self, epoch): 
