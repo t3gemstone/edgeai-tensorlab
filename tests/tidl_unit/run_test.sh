@@ -43,6 +43,7 @@ echo \
     --test_suite        Test suite. Allowed values are (operator)
     --run_compile       Run model compilation test. Allowed values are (0,1). Default=1.
     --run_infer         Run model inference test. Allowed values are (0,1). Default=1.
+    --work_dir          Path to save/use model artifacts for inference.
     --tidl_offload      Enable TIDL Offload. Allowed values are (0,1). Default=1.
     --runtime           Select the Compiler Runtime to use. Allowed values are (onnxrt, tvmrt). Default=onnxrt
     --tests             Specify tests name. If null, will run all test based on test_suite. Default=null.
@@ -60,6 +61,7 @@ test_suite=""
 tests=""
 run_compile=""
 run_infer=""
+work_dir=""
 tidl_offload=""
 flow_ctrl=""
 temp_buffer_dir=""
@@ -79,6 +81,9 @@ while [ $# -gt 0 ]; do
         ;;
         --run_infer=*)
         run_infer="${1#*=}"
+        ;;
+        --work_dir=*)
+        work_dir="${1#*=}"
         ;;
         --tidl_offload=*)
         tidl_offload="${1#*=}"
@@ -242,6 +247,9 @@ if [[ "$nmse_threshold" != "" ]]; then
 fi
 extra_args="${extra_args} --temp-buffer-dir $temp_buffer_dir"
 extra_args="${extra_args} --runtime=${runtime}"
+if [[ "$work_dir" != "" ]]; then
+    extra_args="${extra_args} --work-dir ${work_dir}"
+fi
 
 if [[ "$run_compile" == "1" ]]; then
     echo "##################################################################"

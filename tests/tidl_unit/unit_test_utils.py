@@ -1,5 +1,7 @@
 from edgeai_benchmark import *
 import re
+import os
+import shutil
 
 def get_tidl_performance(interpreter, session_name="onnxrt"):
     '''
@@ -80,3 +82,13 @@ def get_tidl_performance(interpreter, session_name="onnxrt"):
     }
     #
     return stats
+
+def remove_dir(dir_path):
+    if not os.path.isdir(dir_path):
+        return -1
+    try:
+        shutil.rmtree(dir_path)
+    except Exception as e:
+        return -1
+
+    return 0

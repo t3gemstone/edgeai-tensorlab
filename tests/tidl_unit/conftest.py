@@ -16,6 +16,7 @@ def pytest_addoption(parser):
     parser.addoption("--temp-buffer-dir", type=str, default="/dev/shm")
     parser.addoption("--nmse-threshold", type=float, default=0.5)
     parser.addoption("--runtime", type=str, default="onnxrt")
+    parser.addoption("--work-dir", type=str, default="")
 
 def pytest_sessionfinish(session):
     try:
