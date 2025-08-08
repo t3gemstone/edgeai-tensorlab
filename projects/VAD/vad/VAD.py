@@ -689,8 +689,14 @@ class VAD(MVXTwoStageDetector):
                     gt_ego_fut_trajs[:, :cur_time],
                     occupancy)
                 metric_dict['plan_L2_{}s'.format(i+1)] = traj_L2
+                # With obj_coll.mean(), collision prob for 3s could be 
+                # smaller than collision prob for 1s or 2s.
+                # It might be more reasonable to use obj_coll.any() here.
+                # To REVISIT!
                 metric_dict['plan_obj_col_{}s'.format(i+1)] = obj_coll.mean().item()
                 metric_dict['plan_obj_box_col_{}s'.format(i+1)] = obj_box_coll.mean().item()
+                #metric_dict['plan_obj_col_{}s'.format(i+1)] = float(obj_coll.any().item())
+                #metric_dict['plan_obj_box_col_{}s'.format(i+1)] = float(obj_box_coll.any().item())
             else:
                 metric_dict['plan_L2_{}s'.format(i+1)] = 0.0
                 metric_dict['plan_obj_col_{}s'.format(i+1)] = 0.0

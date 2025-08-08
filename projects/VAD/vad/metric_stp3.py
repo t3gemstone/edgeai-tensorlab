@@ -71,7 +71,7 @@ class PlanningMetric():
                                     dtype=torch.long)
 
         return bev_resolution, bev_start_position, bev_dimension
-    
+
     def get_label(
             self,
             gt_agent_boxes,
@@ -82,7 +82,7 @@ class PlanningMetric():
         pedestrian = torch.from_numpy(pedestrian_np).long().unsqueeze(0)
 
         return segmentation, pedestrian
-    
+
     def get_birds_eye_view_label(
             self,
             gt_agent_boxes,
@@ -112,7 +112,8 @@ class PlanningMetric():
         gt_agent_fut_trajs = np.cumsum(gt_agent_fut_trajs, axis=1)
         gt_agent_fut_yaw = np.cumsum(gt_agent_fut_yaw, axis=1)
 
-        gt_agent_boxes[:,6:7] = -1*(gt_agent_boxes[:,6:7] + np.pi/2) # NOTE: convert yaw to lidar frame
+        # Not necesary since we already convert yaw to lidar frame in the dataset
+        #gt_agent_boxes[:,6:7] = -1*(gt_agent_boxes[:,6:7] + np.pi/2) # NOTE: convert yaw to lidar frame
         gt_agent_fut_trajs = gt_agent_fut_trajs + gt_agent_boxes[:, np.newaxis, 0:2]
         gt_agent_fut_yaw = gt_agent_fut_yaw + gt_agent_boxes[:, np.newaxis, 6:7]
         
@@ -121,7 +122,9 @@ class PlanningMetric():
                 if gt_agent_fut_mask[i][t] == 1:
                     # Filter out all non vehicle instances
                     category_index = int(gt_agent_feats[0,i][27])
-                    agent_length, agent_width = gt_agent_boxes[i][4], gt_agent_boxes[i][3]
+                    # In the dataset, length is gt_bbox[3] and width is gt_bbox[4]
+                    #agent_length, agent_width = gt_agent_boxes[i][4], gt_agent_boxes[i][3]
+                    agent_length, agent_width = gt_agent_boxes[i][3], gt_agent_boxes[i][4]
                     x_a = gt_agent_fut_trajs[i, t, 0]
                     y_a = gt_agent_fut_trajs[i, t, 1]
                     yaw_a = gt_agent_fut_yaw[i, t, 0]
@@ -140,13 +143,18 @@ class PlanningMetric():
         #     plt.imshow(segmentation[i])
         #     plt.subplot(2,T,i+1+T)
         #     plt.imshow(pedestrian[i])
-        # plt.savefig('/home/users/qing01.xu/bevformer/debug_figs/car_ped_occ.jpg')
+        # plt.savefig('/home/a0271391/Documents/car_ped_occ.jpg')
         # plt.close()
 
         return segmentation, pedestrian
-    
+
+
+    # Get polygon region in the current LiDAR CS
     def _get_poly_region_in_image(self,param):
-        lidar2cv_rot = np.array([[1,0], [0,-1]])
+        # Why do we need to convert to cv frame? (what is the cv frame?)
+        # So set lidar2cv_rot to identity rotation matrix to keep polygon in the LiDAR CS
+        #lidar2cv_rot = np.array([[1,0], [0,-1]])
+        lidar2cv_rot = np.array([[1,0], [0,1]])
         x_a,y_a,yaw_a,agent_length, agent_width = param
         trans_a = np.array([[x_a,y_a]]).T
         rot_mat_a = np.array([[np.cos(yaw_a), -np.sin(yaw_a)],
@@ -164,16 +172,21 @@ class PlanningMetric():
 
 
     def evaluate_single_coll(self, traj, segmentation, input_gt):
-        '''
+        """
         traj: torch.Tensor (n_future, 2)
-            自车lidar系为轨迹参考系
-                ^ y
-                |
-                | 
-                0------->
-                        x
-        segmentation: torch.Tensor (n_future, 200, 200)
-        '''
+              The ego-vehicle lidar system is the trajectory reference system
+
+                   ^ x
+                   |
+                   | 
+          y<-------0
+
+        segmentation: torch.Tensor (n_future, 200, 200) in the current LiDAR CS
+        """
+
+        # pts is ego-vehicle box corners
+        # LiDAR CS is perpendicular to the ego-vehicle driving direction in NuScenes
+        # So we change the order of x and y to keep ego-vehicle polygon in the LiDAR CS
         pts = np.array([
             [-self.H / 2. + 0.5, self.W / 2.],
             [self.H / 2. + 0.5, self.W / 2.],
@@ -181,19 +194,18 @@ class PlanningMetric():
             [-self.H / 2. + 0.5, -self.W / 2.],
         ])
         pts = (pts - self.bx.cpu().numpy()) / (self.dx.cpu().numpy())
-        pts[:, [0, 1]] = pts[:, [1, 0]]
-        rr, cc = polygon(pts[:,1], pts[:,0])
+        #pts[:, [0, 1]] = pts[:, [1, 0]]
+        rr, cc = polygon(pts[:,1], pts[:,0]) # to convert to LiDAR CS
         rc = np.concatenate([rr[:,None], cc[:,None]], axis=-1)
 
         n_future, _ = traj.shape
         trajs = traj.view(n_future, 1, 2)
-        # 轨迹坐标系转换为:
-        #  ^ x
-        #  |
-        #  | 
-        #  0-------> y
+
         trajs_ = copy.deepcopy(trajs)
-        trajs_[:,:,[0,1]] = trajs_[:,:,[1,0]] # can also change original tensor
+
+        # Do not need to change the order of x and y
+        # since pts (ego-vehicle polygon) and trajs are already in the LiDAR CS
+        #trajs_[:,:,[0,1]] = trajs_[:,:,[1,0]] # can also change original tensor
         trajs_ = trajs_ / self.dx.to(trajs.device)
         trajs_ = trajs_.cpu().numpy() + rc # (n_future, 32, 2)
 
@@ -232,31 +244,33 @@ class PlanningMetric():
         #     plt.subplot(2,6,i+7)
         #     plt.imshow(ego_occ[i])
         # if input_gt:
-        #     plt.savefig('/home/users/qing01.xu/bevformer/debug_figs/occ_metric_stp3_gt.jpg')
+        #     plt.savefig('/home/a0271391/Documents/occ_metric_stp3_gt.jpg')
         # else:
-        #     plt.savefig('/home/users/qing01.xu/bevformer/debug_figs/occ_metric_stp3_pred.jpg')
+        #     plt.savefig('/home/a0271391/Documents/occ_metric_stp3_pred.jpg')
         # plt.close()
 
         return torch.from_numpy(collision).to(device=traj.device)
 
+    
     def evaluate_coll(
-            self, 
-            trajs, 
-            gt_trajs, 
+            self,
+            trajs,
+            gt_trajs,
             segmentation
         ):
-        '''
+        """
         trajs: torch.Tensor (B, n_future, 2)
-            自车lidar系为轨迹参考系
-            ^ y
-            |
-            | 
-            0------->
-                    x
-        gt_trajs: torch.Tensor (B, n_future, 2)
-        segmentation: torch.Tensor (B, n_future, 200, 200)
+               The ego-vehicle LiDAR CS is the trajectory reference system
 
-        '''
+                   ^ x
+                   |
+                   | 
+          y<-------0
+
+        gt_trajs: torch.Tensor (B, n_future, 2) in the current LiDAR CS
+        segmentation: torch.Tensor (B, n_future, 200, 200)
+                      segmentation map (of moving agents) in the current LiDAR CS
+        """
         B, n_future, _ = trajs.shape
         # trajs = trajs * torch.tensor([-1, 1], device=trajs.device)
         # gt_trajs = gt_trajs * torch.tensor([-1, 1], device=gt_trajs.device)
@@ -268,9 +282,14 @@ class PlanningMetric():
             gt_box_coll = self.evaluate_single_coll(gt_trajs[i], segmentation[i], input_gt=True)
 
             xx, yy = trajs[i,:,0], trajs[i, :, 1]
-            # lidar系下的轨迹转换到图片坐标系下
+            """
+            # Convert the trajectory in the lidar system to the image coordinate system????
             xi = ((-self.bx[0]/2 - yy) / self.dx[0]).long()
             yi = ((-self.bx[1]/2 + xx) / self.dx[1]).long()
+            """
+            # Convert the trajectory in the lidar system BEV dimension
+            xi = ((-self.bx[0] + xx) / self.dx[0]).long()
+            yi = ((-self.bx[1] + yy) / self.dx[1]).long()
 
             m1 = torch.logical_and(
                 torch.logical_and(xi >= 0, xi < self.bev_dimension[0]),

@@ -243,7 +243,8 @@ def _fill_trainval_ad_infos(nusc,
         mmengine.check_file_exist(lidar_path)
         # For AD, can_bus is needed
         can_bus = _get_can_bus_info(nusc, nusc_can_bus, sample)
-        #can_bus = np.zeros(18, dtype=float)
+
+        # fut_valid_flag = True only if the next 6 samples (3-sec samples) exist
         fut_valid_flag = True
         test_sample = copy.deepcopy(sample)
         for i in range(fut_ts):
@@ -364,10 +365,14 @@ def _fill_trainval_ad_infos(nusc,
             for i, anno in enumerate(annotations):
                 cur_box = boxes[i]
                 cur_anno = anno
+                # agent_lcf_feat is w.r.t. the current LiDAR frame
                 agent_lcf_feat[i, 0:2] = cur_box.center[:2]	
                 agent_lcf_feat[i, 2] = gt_boxes_yaw[i]
                 agent_lcf_feat[i, 3:5] = velocity[i]
-                agent_lcf_feat[i, 5:8] = anno['size'] # width,length,height
+                # anno['size'] is in the order of (width,length,height)
+                # It is better to convert it to (length, width, height) for consistency. 
+                # Since it is not used, we just keep it as it is.
+                agent_lcf_feat[i, 5:8] = anno['size'] 
                 agent_lcf_feat[i, 8] = cat2idx[anno['category_name']] if anno['category_name'] in cat2idx.keys() else -1
                 for j in range(fut_ts):
                     if cur_anno['next'] != '':
@@ -375,10 +380,13 @@ def _fill_trainval_ad_infos(nusc,
                         box_next = Box(
                             anno_next['translation'], anno_next['size'], Quaternion(anno_next['rotation'])
                         )
-                        # Move box to ego vehicle coord system.
+
+                        # Move box to ego vehicle coord system (in the current frame).
+                        # Confirmed
                         box_next.translate(-np.array(pose_record['translation']))
                         box_next.rotate(Quaternion(pose_record['rotation']).inverse)
-                        #  Move box to sensor coord system.
+                        #  Move box to sensor coord system (in the current frame).
+                        # Confirmed
                         box_next.translate(-np.array(cs_record['translation']))
                         box_next.rotate(Quaternion(cs_record['rotation']).inverse)
                         gt_fut_trajs[i, j] = box_next.center[:2] - cur_box.center[:2]
@@ -425,12 +433,14 @@ def _fill_trainval_ad_infos(nusc,
                 else:
                     ego_his_trajs[i] = ego_his_trajs[i+1] - ego_his_trajs_diff[i+1]
                     ego_his_trajs_diff[i] = ego_his_trajs_diff[i+1]
-            
+
             # global to ego at lcf
+            # confirmed
             ego_his_trajs = ego_his_trajs - np.array(pose_record['translation'])
             rot_mat = Quaternion(pose_record['rotation']).inverse.rotation_matrix
             ego_his_trajs = np.dot(rot_mat, ego_his_trajs.T).T
             # ego to lidar at lcf
+            # confirmed
             ego_his_trajs = ego_his_trajs - np.array(cs_record['translation'])
             rot_mat = Quaternion(cs_record['rotation']).inverse.rotation_matrix
             ego_his_trajs = np.dot(rot_mat, ego_his_trajs.T).T
@@ -449,21 +459,30 @@ def _fill_trainval_ad_infos(nusc,
                     break
                 else:
                     sample_cur = nusc.get('sample', sample_cur['next'])
+
             # global to ego at lcf
+            # confirmed
             ego_fut_trajs = ego_fut_trajs - np.array(pose_record['translation'])
             rot_mat = Quaternion(pose_record['rotation']).inverse.rotation_matrix
             ego_fut_trajs = np.dot(rot_mat, ego_fut_trajs.T).T
             # ego to lidar at lcf
+            # confirmed
             ego_fut_trajs = ego_fut_trajs - np.array(cs_record['translation'])
             rot_mat = Quaternion(cs_record['rotation']).inverse.rotation_matrix
             ego_fut_trajs = np.dot(rot_mat, ego_fut_trajs.T).T
+
             # drive command according to final fut step offset from lcf
+            # Do-Kyoung: ego_fut_trajs is w.r.t. LiDAR CS.
+            # x is forward in Lidar CS, but x is perpendicular to ego vehicle
+            # (i.e. y is aligned to the driving direction).
+            # So we check x offset for driving command
             if ego_fut_trajs[-1][0] >= 2:
                 command = np.array([1, 0, 0])  # Turn Right
             elif ego_fut_trajs[-1][0] <= -2:
                 command = np.array([0, 1, 0])  # Turn Left
             else:
                 command = np.array([0, 0, 1])  # Go Straight
+
             # offset from lcf -> per-step offset
             ego_fut_trajs = ego_fut_trajs[1:] - ego_fut_trajs[:-1]
 
@@ -484,6 +503,12 @@ def _fill_trainval_ad_infos(nusc,
                 #ego_yaw_next, _, _ = Quaternion(pose_record_next['rotation']).yaw_pitch_roll
                 ego_pos_next = np.array(pose_record_next['translation'])
             assert (pose_record_prev is not None) or (pose_record_next is not None), 'prev token and next token all empty'
+
+            # Note 1: For ego_w (angular velocity in z) and ego_v (linear velocity),
+            #         divide by 0.5 (i.e. x2) since it is change in 0.5 sec.
+            # Note 2: Why add np.pi/2 for cos and sin? (to switch x <-> y axis??)
+            # Note 3: ego_w, ego_v are w.r.t the global frame, so does gt_ego_lcf_feat,
+            #         which is NOT consistent with others including gt_agent_lcf_feat w.r.t. the LiDAR frame.
             if pose_record_prev is not None:
                 ego_w = (ego_yaw - ego_yaw_prev) / 0.5
                 ego_v = np.linalg.norm(ego_pos[:2] - ego_pos_prev[:2]) / 0.5
@@ -563,8 +588,11 @@ def get_global_sensor_pose(rec, nusc, inverse=False):
     sd_ep = nusc.get("ego_pose", lidar_sample_data["ego_pose_token"])
     sd_cs = nusc.get("calibrated_sensor", lidar_sample_data["calibrated_sensor_token"])
     if inverse is False:
+        # ego 2 global
         global_from_ego = transform_matrix(sd_ep["translation"], Quaternion(sd_ep["rotation"]), inverse=False)
+        # sensor 2 ego
         ego_from_sensor = transform_matrix(sd_cs["translation"], Quaternion(sd_cs["rotation"]), inverse=False)
+        # sensor 2 global
         pose = global_from_ego.dot(ego_from_sensor)
         # translation equivalent writing
         # pose_translation = np.array(sd_cs["translation"])
