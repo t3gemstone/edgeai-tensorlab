@@ -140,7 +140,6 @@ class BEVFormer(MVXTwoStageDetector):
                     export_BEVFormer(self.onnx_model, inputs, data_samples, **kwargs)
                     # Export onnx only once
                     self.save_onnx_model = False
-                    # exit()
 
                 return self.predict(inputs, data_samples, **kwargs)
         elif mode == 'tensor':
@@ -152,9 +151,8 @@ class BEVFormer(MVXTwoStageDetector):
 
     def extract_img_feat(self, img, batch_input_metas, len_queue=None):
         """Extract features of images."""
-        B = img.size(0) 
+        B = img.size(0)
         if img is not None:
-            
             # input_shape = img.shape[-2:]
             # # update real input shape of each single img
             # for img_meta in batch_input_metas:
@@ -204,7 +202,6 @@ class BEVFormer(MVXTwoStageDetector):
             prev_bev = None
             bs, len_queue, num_cams, C, H, W = imgs_queue.shape
             imgs_queue = imgs_queue.reshape(bs*len_queue, num_cams, C, H, W)
-            #img_feats_list = self.extract_feat(batch_inputs_dict=imgs_queue, len_queue=len_queue)
 
             img_feats_list = self.extract_img_feat(imgs_queue, None, len_queue=len_queue)
 
@@ -306,9 +303,9 @@ class BEVFormer(MVXTwoStageDetector):
                 contains a tensor with shape (num_instances, 9).
         """
         batch_input_metas = [item.metainfo for item in batch_data_samples]
-        # 'lidar2img' already in metainfo. Don't need to call
-        #batch_input_metas = self.add_lidar2img(batch_input_metas)
 
+        """
+        # Test code to see if we can use the same lidar2img in the same scene
         if batch_input_metas[0]['scene_token'] == self.prev_frame_info['scene_token']:
             batch_input_metas[0]['lidar2img'] = copy.deepcopy(self.prev_lidar2img)
         else:
@@ -319,6 +316,7 @@ class BEVFormer(MVXTwoStageDetector):
             #     batch_input_metas[0]['cam2img'][0], batch_input_metas[0]['cam2img'][1], \
             #     batch_input_metas[0]['cam2img'][2], batch_input_metas[0]['cam2img'][3], \
             #     batch_input_metas[0]['cam2img'][4], batch_input_metas[0]['cam2img'][5]))
+        """
 
         if batch_input_metas[0]['scene_token'] != self.prev_frame_info['scene_token']:
             # the first sample of each scene is truncated
@@ -344,7 +342,8 @@ class BEVFormer(MVXTwoStageDetector):
         img_feats = self.extract_feat(batch_inputs_dict, batch_input_metas)
 
         if self.prev_frame_info['prev_bev'] is None:
-            self.prev_frame_info['prev_bev'] = torch.zeros([2500, 1, 256]).to(img_feats[0].device)
+            self.prev_frame_info['prev_bev'] = torch.zeros(
+                [self.pts_bbox_head.bev_h*self.pts_bbox_head.bev_w, 1, self.pts_bbox_head.in_channels]).to(img_feats[0].device)
 
         #bbox_list = [dict() for i in range(len(batch_input_metas))]
         new_prev_bev, bbox_pts = self.simple_test_pts(
