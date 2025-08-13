@@ -4,6 +4,7 @@ import torch
 import torch.nn as nn
 from PIL import Image
 
+
 class GridMask(nn.Module):
 
     def __init__(self,

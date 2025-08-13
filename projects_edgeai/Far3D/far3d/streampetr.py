@@ -24,8 +24,8 @@ from .onnx_export import export_StreamPETR
 
 
 @MODELS.register_module()
-class PETR3D(MVXTwoStageDetector):
-    """PETR3D."""
+class StreamPETR(MVXTwoStageDetector):
+    """StreamPETR."""
 
     def __init__(self,
                  use_grid_mask=False,
@@ -51,7 +51,7 @@ class PETR3D(MVXTwoStageDetector):
                  aux_2d_only=True,
                  single_test=False,
                  data_preprocessor=None):
-        super(PETR3D, self).__init__(pts_voxel_encoder,
+        super(StreamPETR, self).__init__(pts_voxel_encoder,
                              pts_middle_encoder, pts_fusion_layer,
                              img_backbone, pts_backbone, img_neck, pts_neck,
                              pts_bbox_head, img_roi_head, img_rpn_head,

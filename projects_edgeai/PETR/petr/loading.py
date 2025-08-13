@@ -11,24 +11,6 @@ from mmengine.fileio import get
 from mmdet3d.datasets.transforms import LoadMultiViewImageFromFiles, LoadAnnotations3D
 from mmdet3d.registry import TRANSFORMS
 
-@TRANSFORMS.register_module()
-class LoadMapsFromFiles(object):
-    def __init__(self,k=None):
-        self.k=k
-    def __call__(self,results):
-        map_filename=results['map_filename']
-        maps=np.load(map_filename)
-        map_mask=maps['arr_0'].astype(np.float32)
-        
-        maps=map_mask.transpose((2,0,1))
-        results['gt_map']=maps
-        maps=rearrange(maps, 'c (h h1) (w w2) -> (h w) c h1 w2 ', h1=16, w2=16)
-        maps=maps.reshape(256,3*256)
-        results['map_shape']=maps.shape
-        results['maps']=maps
-        return results
-
-
 
 @TRANSFORMS.register_module()
 class LoadMultiViewImageFromMultiSweepsFiles(LoadMultiViewImageFromFiles):
@@ -159,72 +141,5 @@ class LoadMultiViewImageFromMultiSweepsFiles(LoadMultiViewImageFromFiles):
         repr_str += f"color_type='{self.color_type}')"
         return repr_str
 
-@TRANSFORMS.register_module()
-class LoadMapsFromFiles_flattenf200f3(object):
-    def __init__(self,k=None):
-        self.k=k
-    def __call__(self,results):
-        map_filename=results['map_filename']
-        maps=np.load(map_filename)
-        map_mask=maps['arr_0'].astype(np.float32)
-        
-        maps=map_mask.transpose((2,0,1))
-        results['gt_map']=maps
-        # maps=rearrange(maps, 'c (h h1) (w w2) -> (h w) c h1 w2 ', h1=16, w2=16)
-        maps=maps.reshape(3,200*200)
-        maps[maps>=0.5]=1
-        maps[maps<0.5]=0
-        maps=1-maps
-        results['map_shape']=maps.shape
-        results['maps']=maps
-        
-        return results
-
-
-@TRANSFORMS.register_module()
-class StreamPETRLoadAnnotations3D(LoadAnnotations3D):
-
-    def _load_bboxes(self, results: dict) -> None:
-        """Private function to load bounding box annotations.
-
-        The only difference is it remove the proceess for
-        `ignore_flag`
-
-        Args:
-            results (dict): Result dict from :obj:`mmcv.BaseDataset`.
-
-        Returns:
-            dict: The dict contains loaded bounding box annotations.
-        """
-
-        results['gt_bboxes'] = results['ann_info']['bboxes']
-        gt_bboxes_ignore = results['ann_info'].get('bboxes_ignore', None)
-        if gt_bboxes_ignore is not None:
-            results['gt_bboxes_ignore'] = gt_bboxes_ignore.copy()
-
-    def _load_labels(self, results: dict) -> None:
-        """Private function to load label annotations.
-
-        Args:
-            results (dict): Result dict from :obj :obj:`mmcv.BaseDataset`.
-
-        Returns:
-            dict: The dict contains loaded label annotations.
-        """
-        results['gt_bboxes_labels'] = results['ann_info']['labels']
-
-    def _load_bboxes_depth(self, results: dict) -> dict:
-        """Private function to load 2.5D bounding box annotations.
-
-        Args:
-            results (dict): Result dict from :obj:`mmdet3d.CustomDataset`.
-
-        Returns:
-            dict: The dict containing loaded 2.5D bounding box annotations.
-        """
-
-        results['depths'] = results['ann_info']['depths']
-        results['centers_2d'] = results['ann_info']['centers_2d']
-        return results
 
 

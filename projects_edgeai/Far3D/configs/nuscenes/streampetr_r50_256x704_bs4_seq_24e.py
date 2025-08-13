@@ -4,7 +4,7 @@ _base_ = [
     'mmdet3d::_base_/schedules/cyclic-20e.py'
 ]
 backbone_norm_cfg = dict(type='LN', requires_grad=True)
-custom_imports = dict(imports=['projects_edgeai.PETR.petr'])
+custom_imports = dict(imports=['projects_edgeai.Far3D.far3d'])
 
 # If point cloud range is changed, the models should also change their point
 # cloud range accordingly
@@ -35,13 +35,13 @@ input_modality = dict(
     use_map=False,
     use_external=True)
 model = dict(
-    type='PETR3D',
+    type='StreamPETR',
     save_onnx_model=False,
     num_frame_head_grads=num_frame_losses,
     num_frame_backbone_grads=num_frame_losses,
     num_frame_losses=num_frame_losses,
     data_preprocessor=dict(
-        type='Petr3DDataPreprocessor',
+        type='Far3DDataPreprocessor',
         mean=[123.675, 116.28, 103.53],
         std=[58.395, 57.12, 57.375],
         bgr_to_rgb=True,
@@ -140,7 +140,7 @@ model = dict(
             max_num=300,
             voxel_size=voxel_size,
             num_classes=10,
-            model='PETR3D'),
+            model='StreamPETR'),
         loss_cls=dict(
             type='mmdet.FocalLoss',
             use_sigmoid=True,
@@ -162,10 +162,10 @@ model = dict(
                 reg_cost=dict(type='BBox3DL1Cost', weight=0.25),
                 iou_cost=dict(type='IoUCost', weight=0.0), # Fake cost. This is just to make it compatible with DETR head.
                 pc_range=point_cloud_range,
-                model='PETR3D'))))
+                model='StreamPETR'))))
 
 
-dataset_type = 'StreamNuScenesDataset'
+dataset_type = 'Far3DNuScenesDataset'
 data_root = './data/nuscenes/'
 backend_args = None
 

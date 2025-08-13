@@ -4,7 +4,7 @@ _base_ = [
     'mmdet3d::_base_/schedules/cyclic-20e.py'
 ]
 
-custom_imports = dict(imports=['projects_edgeai.PETR.petr'])
+custom_imports = dict(imports=['projects_edgeai.Far3D.far3d'])
 
 # If point cloud range is changed, the models should also change their point
 # cloud range accordingly
@@ -43,7 +43,7 @@ model = dict(
     stride=[8, 16, 32, 64],
     position_level=[0, 1, 2, 3],
     data_preprocessor=dict(
-        type='Petr3DDataPreprocessor',
+        type='Far3DDataPreprocessor',
         mean=[103.530, 116.280, 123.675],
         std=[57.375, 57.120, 58.395],
         bgr_to_rgb=False, # False always
@@ -128,7 +128,7 @@ model = dict(
                             num_heads=8,
                             dropout=0.1),
                         dict(
-                            type='DeformableFeatureAggregationCuda', 
+                            type='DeformableFeatureAggregationCuda',
                             embed_dims=256,
                             num_groups=8,
                             num_levels=4,
@@ -176,7 +176,7 @@ model = dict(
                 model='Far3D'))))
 
 
-dataset_type = 'StreamNuScenesDataset'
+dataset_type = 'Far3DNuScenesDataset'
 data_root = './data/nuscenes/'
 backend_args = None
 

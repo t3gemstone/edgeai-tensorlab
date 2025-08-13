@@ -11,7 +11,7 @@ import torch
 from mmdet.models.task_modules import AssignResult, BaseAssigner
 
 from mmdet3d.registry import TASK_UTILS
-from .utils import normalize_bbox
+from .utils import normalize_bbox_streampetr
 
 try:
     from scipy.optimize import linear_sum_assignment
@@ -118,7 +118,7 @@ class HungarianAssigner3D(BaseAssigner):
         # classification and bboxcost.
         cls_cost = self.cls_cost(cls_pred, gt_labels)
         # regression L1 cost
-        normalized_gt_bboxes = normalize_bbox(gt_bboxes, self.pc_range)
+        normalized_gt_bboxes = normalize_bbox_streampetr(gt_bboxes, self.pc_range)
         if code_weights is not None:
             bbox_pred = bbox_pred * code_weights
             normalized_gt_bboxes = normalized_gt_bboxes * code_weights

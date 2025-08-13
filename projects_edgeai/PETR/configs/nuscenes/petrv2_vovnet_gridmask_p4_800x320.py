@@ -130,7 +130,7 @@ model = dict(
                 ),  # Fake cost. Just to be compatible with DETR head.
                 pc_range=point_cloud_range))))
 
-dataset_type = 'CustomNuScenesDataset'
+dataset_type = 'PETRv2NuScenesDataset'
 data_root = 'data/nuscenes/'
 backend_args = None
 

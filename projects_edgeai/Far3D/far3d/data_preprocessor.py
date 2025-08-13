@@ -18,7 +18,7 @@ from mmdet3d.models.data_preprocessors.data_preprocessor import Det3DDataPreproc
 from mmdet3d.models.data_preprocessors.utils import multiview_img_stack_batch
 
 @MODELS.register_module()
-class Petr3DDataPreprocessor(Det3DDataPreprocessor):
+class Far3DDataPreprocessor(Det3DDataPreprocessor):
     """Points / Image pre-processor for point clouds / vision-only / multi-
     modality 3D detection tasks.
     """
