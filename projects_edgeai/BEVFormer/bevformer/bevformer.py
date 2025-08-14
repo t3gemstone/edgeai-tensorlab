@@ -17,8 +17,8 @@ from mmdet3d.models.detectors.mvx_two_stage import MVXTwoStageDetector
 from mmdet3d.registry import MODELS
 from mmdet3d.structures import Det3DDataSample
 
-from .grid_mask import GridMask
 from .onnx_export import export_BEVFormer, create_onnx_BEVFormer
+from ...edgeai_mmdet3d.grid_mask import GridMask
 
 
 @MODELS.register_module()

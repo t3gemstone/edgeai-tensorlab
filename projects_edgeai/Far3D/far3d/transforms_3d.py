@@ -324,32 +324,6 @@ class GlobalRotScaleTransImage(BaseTransform):
         return
 
 
-@TRANSFORMS.register_module()
-class CustomMultiScaleFlipAug3D(MultiScaleFlipAug3D):
-    def __init__(self,
-                 transforms,
-                 img_scale,
-                 pts_scale_ratio,
-                 flip = False,
-                 flip_direction = 'horizontal',
-                 pcd_horizontal_flip = False,
-                 pcd_vertical_flip = False):
-        super().__init__(transforms,
-                         img_scale,
-                         pts_scale_ratio,
-                         flip,
-                         flip_direction,
-                         pcd_horizontal_flip,
-                         pcd_vertical_flip)
-
-    def transform(self, results):
-        results = super().transform(results)
-        if isinstance(results, list):
-            results = results[0]
-
-        return results
-
-
 
 @TRANSFORMS.register_module()
 class CustomPack3DDetInputs(Pack3DDetInputs):

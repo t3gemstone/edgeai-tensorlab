@@ -17,10 +17,10 @@ from mmdet3d.registry import MODELS
 from mmdet3d.structures.ops import bbox3d2result
 from mmdet3d.models.detectors.mvx_two_stage import MVXTwoStageDetector
 from mmdet3d.structures.det3d_data_sample import ForwardResults, OptSampleList
-from .grid_mask import GridMask
-from .utils import locations
 
+from .utils import locations
 from .onnx_export import export_StreamPETR
+from ...edgeai_mmdet3d.grid_mask import GridMask
 
 
 @MODELS.register_module()

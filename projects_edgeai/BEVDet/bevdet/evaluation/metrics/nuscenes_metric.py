@@ -23,7 +23,7 @@ from mmdet3d.evaluation.metrics.nuscenes_metric import NuScenesMetric
 
 
 @METRICS.register_module()
-class CustomNuScenesMetric(NuScenesMetric):
+class BEVDetNuScenesMetric(NuScenesMetric):
     """Nuscenes evaluation metric.
 
     Args:
@@ -62,7 +62,7 @@ class CustomNuScenesMetric(NuScenesMetric):
                  eval_version: str = 'detection_cvpr_2019',
                  collect_device: str = 'cpu',
                  backend_args: Optional[dict] = None) -> None:
-        super(CustomNuScenesMetric, self).__init__(
+        super(BEVDetNuScenesMetric, self).__init__(
             data_root, ann_file, metric, modality, prefix, format_only,
             jsonfile_prefix, eval_version, collect_device, backend_args)
 

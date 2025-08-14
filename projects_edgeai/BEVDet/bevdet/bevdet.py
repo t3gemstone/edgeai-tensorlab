@@ -10,7 +10,7 @@ from mmdet3d.structures.ops import bbox3d2result
 from mmdet3d.registry import MODELS
 
 from .onnx_export import export_BEVDet
-from .grid_mask import GridMask
+from ...edgeai_mmdet3d.grid_mask import GridMask
 
 @MODELS.register_module()
 class BEVDet(CenterPoint):

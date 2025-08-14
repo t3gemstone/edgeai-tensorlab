@@ -60,30 +60,21 @@ class PETRv2NuScenesDataset(NuScenesDataset):
                 intrinsic = cam_info['cam2img']
                 viewpad = np.eye(4)
                 viewpad[:3, :3] = intrinsic
-                #lidar2img_rt = (viewpad @ lidar2cam_rt.T)
                 lidar2img_rt = (viewpad @ lidar2cam_rt)
-                #intrinsics.append(viewpad)
                 
                 ###The extrinsics mean the tranformation from lidar to camera. 
                 ### If anyone want to use the extrinsics as sensor to lidar, 
                 ### please use np.linalg.inv(lidar2cam_rt.T) and modify the ResizeCropFlipImage and 
                 ### LoadMultiViewImageFromMultiSweepsFiles.
-                #lidar2cam_rts.append(lidar2cam_rt)
                 lidar2img_rts.append(lidar2img_rt)
 
             info.update(
                 dict(
                     img_timestamp=img_timestamp,
-                    #img_filename=image_paths,
                     lidar2img=lidar2img_rts,
-                    #intrinsics=intrinsics,
-                    #lidar2cam=lidar2cam_rts 
                 ))
 
 
-        #if not self.test_mode:
-        #    annos = self.get_ann_info(index)
-        #    input_dict['ann_info'] = annos
         return info
 
     def full_init(self):

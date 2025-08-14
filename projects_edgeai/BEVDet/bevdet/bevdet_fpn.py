@@ -2,13 +2,12 @@
 import torch.nn as nn
 import torch.nn.functional as F
 from mmcv.cnn import ConvModule
-from mmdet3d.registry import MODELS
 from mmengine.model import BaseModule
-
+from mmdet3d.registry import MODELS
 
 
 @MODELS.register_module()
-class CustomFPN(BaseModule):
+class BEVDetFPN(BaseModule):
     r"""Feature Pyramid Network.
 
     This is an implementation of paper `Feature Pyramid Networks for Object
@@ -75,7 +74,7 @@ class CustomFPN(BaseModule):
                  upsample_cfg=dict(scale_factor=(2,2), mode='nearest'),
                  init_cfg=dict(
                      type='Xavier', layer='Conv2d', distribution='uniform')):
-        super(CustomFPN, self).__init__(init_cfg)
+        super(BEVDetFPN, self).__init__(init_cfg)
         assert isinstance(in_channels, list)
         self.in_channels = in_channels
         self.out_channels = out_channels

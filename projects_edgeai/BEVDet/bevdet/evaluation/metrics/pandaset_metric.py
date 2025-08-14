@@ -8,7 +8,7 @@ from mmdet3d.evaluation.metrics.pandaset_metric import PandaSetMetric
 from mmdet3d.structures import LiDARInstance3DBoxes
 
 @METRICS.register_module()
-class CustomPandaSetMetric(PandaSetMetric):
+class BEVDetPandaSetMetric(PandaSetMetric):
 
     def compute_metrics(self, results: List[dict]) -> Dict[str, float]:
         self.bbox_type_3d = type(results[0]['pred_instances_3d']['bboxes_3d'])

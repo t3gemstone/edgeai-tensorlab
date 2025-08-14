@@ -24,6 +24,21 @@ class_mapping = [
 ]
 metainfo = dict(classes=class_names, class_mapping=class_mapping)
 
+# meta_keys for Pack3DDetInputs. Some of meta_keys are not needed though
+meta_keys = ['img_path', 'ori_shape', 'img_shape', 'lidar2img',
+             'depth2img', 'cam2img', 'pad_shape',
+             'scale_factor', 'flip', 'pcd_horizontal_flip',
+             'pcd_vertical_flip', 'box_mode_3d', 'box_type_3d',
+             'img_norm_cfg', 'num_pts_feats', 'pcd_trans',
+             'sample_idx', 'pcd_scale_factor', 'pcd_rotation',
+             'pcd_rotation_angle', 'lidar_path',
+             'transformation_3d_flow', 'trans_mat',
+             'affine_aug', 'sweep_img_metas', 'ori_cam2img',
+             'cam2global', 'crop_offset', 'img_crop_offset',
+             'resize_img_shape', 'lidar2cam', 'ori_lidar2img',
+             'num_ref_frames', 'num_views', 'ego2global',
+             'post_rts', 'bda_mat', 'sensor2ego']
+
 
 input_modality = dict(
     use_lidar=False,
@@ -78,7 +93,7 @@ model = dict(
 		init_cfg=dict(type='Pretrained', checkpoint='torchvision://resnet50'),
         style='pytorch'),
     img_neck=dict(
-        type='CustomFPN',
+        type='BEVDetFPN',
         in_channels=[1024, 2048],
         out_channels=256,
         num_outs=1,
@@ -92,7 +107,7 @@ model = dict(
         out_channels=numC_Trans,
         downsample=16),
     img_bev_encoder_backbone=dict(
-        type='CustomResNet',
+        type='BEVResNet',
         numC_input=numC_Trans,
         num_channels=[numC_Trans * 2, numC_Trans * 4, numC_Trans * 8]),
     img_bev_encoder_neck=dict(
@@ -159,7 +174,7 @@ model = dict(
 )
 
 # Data
-dataset_type = 'CustomPandaSetDataset'
+dataset_type = 'BEVDetPandaSetDataset'
 data_root = 'data/pandaset/'
 #file_client_args = dict(backend='disk')
 backend_args = None
@@ -193,7 +208,7 @@ train_pipeline = [
         classes=class_names),
     dict(type='ObjectRangeFilter', point_cloud_range=point_cloud_range),
     dict(type='ObjectNameFilter', classes=class_names),
-    dict(type='CustomPack3DDetInputs', keys=['img', 'gt_bboxes_3d', 'gt_labels_3d'])
+    dict(type='Pack3DDetInputs', keys=['img', 'gt_bboxes_3d', 'gt_labels_3d'], meta_keys=meta_keys)
 ]
 
 
@@ -219,7 +234,7 @@ test_pipeline = [
         pts_scale_ratio=1,
         flip=False,
         transforms=[
-            dict(type='CustomPack3DDetInputs', keys=['points', 'img'])
+            dict(type='Pack3DDetInputs', keys=['points', 'img'], meta_keys=meta_keys)
         ])
 ]
 
@@ -273,7 +288,7 @@ test_dataloader = val_dataloader
 
 
 val_evaluator = dict(
-    type='CustomPandaSetMetric',
+    type='BEVDetPandaSetMetric',
     data_root=data_root,
     max_dists=[50, 50],
     ann_file=data_root + 'pandaset_long_infos_val.pkl',

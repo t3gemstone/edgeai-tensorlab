@@ -10,8 +10,8 @@
 
 from typing import Dict, List, Union, Optional
 import queue
-import torch
 import copy
+import torch
 import numpy as np
 from torch import Tensor
 from mmengine.structures import InstanceData
@@ -20,9 +20,9 @@ from mmdet3d.structures import Det3DDataSample
 from mmdet3d.structures.det3d_data_sample import ForwardResults, OptSampleList
 from mmdet3d.registry import MODELS
 from mmdet3d.structures.ops import bbox3d2result
-from .grid_mask import GridMask
 
 from .onnx_export import export_PETR
+from ...edgeai_mmdet3d.grid_mask import GridMask
 
 @MODELS.register_module()
 class PETR(MVXTwoStageDetector):

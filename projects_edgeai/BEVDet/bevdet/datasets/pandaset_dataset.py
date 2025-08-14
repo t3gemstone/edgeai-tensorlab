@@ -1,4 +1,4 @@
-from .nuscenes_dataset import CustomNuScenesDataset
+from .nuscenes_dataset import BEVDetNuScenesDataset
 from mmdet3d.datasets  import NuScenesDataset
 from mmdet3d.datasets import PandaSetDataset
 import torch
@@ -15,7 +15,7 @@ except:
 
 
 @DATASETS.register_module()
-class CustomPandaSetDataset(CustomNuScenesDataset, PandaSetDataset):
+class BEVDetPandaSetDataset(BEVDetNuScenesDataset, PandaSetDataset):
     """
     def __init__(self, 
                  queue_length=4,
@@ -53,7 +53,6 @@ class CustomPandaSetDataset(CustomNuScenesDataset, PandaSetDataset):
                 self.label_mapping[k] = self.get_label_func(k)
             self.label_mapping_changed = True
 
-        # CustomNuScenesDataset::full_init()
         super().full_init() 
         self.num_ins_per_cat = self.new_num_ins_per_cat
 

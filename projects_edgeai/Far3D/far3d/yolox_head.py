@@ -16,12 +16,10 @@ from mmdet.utils import reduce_mean
 
 
 from mmdet.models.dense_heads.base_dense_head import BaseDenseHead
-#from mmdet.models.dense_heads.dense_test_mixins import BBoxTestMixin
 from mmdet3d.registry import MODELS, TASK_UTILS
 
 from mmdet3d.models.task_modules import PseudoSampler
 
-# from .focal_head import DepthNet
 from .depth_predictor import DepthPredictor
 from .depth_predictor.ddn_loss import DDNLoss
 from .utils import MLN
