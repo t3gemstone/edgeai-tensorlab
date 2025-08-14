@@ -297,15 +297,12 @@ for dir in SOC_DIR:
             if infer_ref_with_nc and infer_natc_with_nc:
                 compare_report_path = os.path.join(folder_path, "infer_ref_nc_vs_natc_nc.txt")
                 infer_ref_nc_vs_natc_nc = compare_report(infer_ref_with_nc_path, infer_natc_with_nc_path, output_path=compare_report_path)
-            if infer_ref_with_nc and infer_ci_with_nc:
-                compare_report_path   = os.path.join(folder_path, "infer_ref_nc_vs_ci_nc.txt")
-                infer_ref_nc_vs_ci_nc = compare_report(infer_ref_with_nc_path, infer_ci_with_nc_path, output_path=compare_report_path)
+            if infer_natc_with_nc and infer_ci_with_nc:
+                compare_report_path   = os.path.join(folder_path, "infer_natc_nc_vs_ci_nc.txt")
+                infer_natc_nc_vs_ci_nc = compare_report(infer_natc_with_nc_path, infer_ci_with_nc_path, output_path=compare_report_path)
             if infer_ref and infer_natc:
                 compare_report_path = os.path.join(folder_path, "infer_ref_vs_natc.txt")
                 infer_ref_vs_natc = compare_report(infer_ref_path, infer_natc_path, output_path=compare_report_path)
-            if infer_ref and infer_ci:
-                compare_report_path   = os.path.join(folder_path, "infer_ref_vs_ci.txt")
-                infer_ref_vs_ci = compare_report(infer_ref_path, infer_ci_path, output_path=compare_report_path)
             if infer_natc and infer_ci:
                 compare_report_path = os.path.join(folder_path, "infer_natc_vs_ci.txt")
                 infer_natc_vs_ci = compare_report(infer_natc_path, infer_ci_path, output_path=compare_report_path)
