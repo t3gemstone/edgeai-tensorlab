@@ -1,12 +1,13 @@
+from typing import Union, List, Optional
 import numpy as np
+import torch
 
 from mmcv.transforms import BaseTransform
-from mmcv.transforms import Compose, LoadImageFromFile
+from mmcv.transforms import Compose
 from mmdet3d.registry import TRANSFORMS
 from mmdet3d.datasets.transforms.loading import LoadPointsFromFile
 from mmdet3d.structures.points import get_points_type
-from typing import Union, List, Optional
-import torch
+
 
 
 @TRANSFORMS.register_module()
@@ -74,7 +75,7 @@ class ResetPointOrigin(BaseTransform):
 
 
 @TRANSFORMS.register_module()
-class CustomLoadPointsFromFile(LoadPointsFromFile):
+class FastBEVLoadPointsFromFile(LoadPointsFromFile):
     """Load Points From File.
 
     Required Keys:

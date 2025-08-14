@@ -4,7 +4,8 @@ _base_ = [
     'mmdet3d::_base_/default_runtime.py',
 ]
 
-custom_imports = dict(imports=['projects_edgeai.FastBEV.fastbev'])
+custom_imports = dict(imports=['projects_edgeai.FastBEV.fastbev',
+                               'projects_edgeai.edgeai_mmdet3d'])
 
 # sequential = False for n_times = 1
 n_times = 1
@@ -12,6 +13,21 @@ sequential=True
 
 img_norm_cfg = dict(
     mean=[123.675, 116.28, 103.53], std=[58.395, 57.12, 57.375], bgr_to_rgb=True)
+
+# meta_keys for Pack3DDetInputs. Some of meta_keys are not needed though
+meta_keys = ['img_path', 'ori_shape', 'img_shape', 'lidar2img',
+             'depth2img', 'cam2img', 'pad_shape',
+             'scale_factor', 'flip', 'pcd_horizontal_flip',
+             'pcd_vertical_flip', 'box_mode_3d', 'box_type_3d',
+             'img_norm_cfg', 'num_pts_feats', 'pcd_trans',
+             'sample_idx', 'pcd_scale_factor', 'pcd_rotation',
+             'pcd_rotation_angle', 'lidar_path',
+             'transformation_3d_flow', 'trans_mat',
+             'affine_aug', 'sweep_img_metas', 'ori_cam2img',
+             'cam2global', 'crop_offset', 'img_crop_offset',
+             'resize_img_shape', 'lidar2cam', 'ori_lidar2img',
+             'num_ref_frames', 'num_views', 'ego2global',
+             'axis_align_matrix', 'scene_token', 'lidar2ego']
 
 model = dict(
     type='FastBEV',
@@ -52,7 +68,7 @@ model = dict(
         norm_cfg=dict(type='BN', requires_grad=True)),
     seg_head=None,
     bbox_head=dict(
-        type='CustomFreeAnchor3DHead',
+        type='FastBEVFreeAnchor3DHead',
         is_transpose=True,
         num_classes=3,
         in_channels=192,
@@ -135,7 +151,7 @@ point_cloud_range = [-50, -50, -5, 50, 50, 3]
 class_names = [
     'Car','Pedestrian','Temporary Construction Barriers'
 ]
-dataset_type = 'CustomPandaSetDataset'
+dataset_type = 'FastBEVPandaSetDataset'
 data_root = './data/pandaset/'
 
 # Input modality for nuScenes dataset, this is consistent with the submission
@@ -155,10 +171,6 @@ data_config = {
     'crop': (-0.05, 0.05),
     'rot': (-5.4, 5.4),
     'flip': True,
-    #'resize': (0.0, 0.0),
-    #'crop': (0.0, 0.0),
-    #'rot': (0.0, 0.0),
-    #'flip': False,
     # test-aug
     'test_input_size': (256, 704),
     'test_resize': 0.0,
@@ -183,30 +195,24 @@ train_pipeline = [
          #with_bev_seg=False
          ),
     dict(
-        type='CustomLoadPointsFromFile',
+        type='FastBEVLoadPointsFromFile',
         dummy=True,
         coord_type='LIDAR',
         load_dim=5,
         use_dim=5),
     dict(
-        type='CustomRandomFlip3D',
+        type='FastBEVRandomFlip3D',
         flip_2d=False,
         sync_2d=False,
         flip_ratio_bev_horizontal=0.5,
         flip_ratio_bev_vertical=0.5,
         flip_box3d=True,
-        #flip_ratio_bev_horizontal=0.0,
-        #flip_ratio_bev_vertical=0.0,
-        #flip_box3d=False,
         update_img2lidar=True),
     dict(
-        type='CustomGlobalRotScaleTrans',
+        type='FastBEVGlobalRotScaleTrans',
         rot_range=[-0.3925, 0.3925],
         scale_ratio_range=[0.95, 1.05],
         translation_std=[0.05, 0.05, 0.05],
-        #rot_range=[0.0, 0.0],
-        #scale_ratio_range=[1.0, 1.0],
-        #translation_std=[0.0, 0.0, 0.0],
         update_img2lidar=True),
     dict(type='RandomAugImageMultiViewImage', data_config=data_config),
     dict(type='ObjectRangeFilter', point_cloud_range=point_cloud_range),
@@ -222,7 +228,7 @@ test_pipeline = [
             file_client_args=file_client_args)]),
     dict(type='RandomAugImageMultiViewImage', data_config=data_config, is_train=False),
     dict(type='ResetPointOrigin', point_cloud_range=point_cloud_range),
-    dict(type='CustomPack3DDetInputs', keys=['img'])
+    dict(type='Pack3DDetInputs', keys=['img'], meta_keys=meta_keys)
     ]
 
 class_mapping = [
@@ -303,7 +309,7 @@ val_dataloader = dict(
 test_dataloader = val_dataloader
 
 val_evaluator = dict(
-    type='CustomPandaSetMetric',
+    type='SortedPandaSetMetric',
     data_root=data_root,
     max_dists=[50, 50],
     ann_file=data_root + 'pandaset_infos_val.pkl',

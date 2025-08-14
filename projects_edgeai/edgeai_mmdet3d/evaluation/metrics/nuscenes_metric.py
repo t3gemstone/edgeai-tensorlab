@@ -1,29 +1,15 @@
 # Copyright (c) OpenMMLab. All rights reserved.
-import tempfile
 from os import path as osp
-from typing import Dict, List, Optional, Sequence, Tuple, Union
-
-import mmengine
-import numpy as np
-import pyquaternion
-import torch
-from mmengine import Config, load
-from mmengine.evaluator import BaseMetric
+from typing import Dict, List, Optional, Union
+from mmengine import load
 from mmengine.logging import MMLogger
-from nuscenes.eval.detection.config import config_factory
-from nuscenes.eval.detection.data_classes import DetectionConfig
-from nuscenes.utils.data_classes import Box as NuScenesBox
 
-from mmdet3d.models.layers import box3d_multiclass_nms
 from mmdet3d.registry import METRICS
-from mmdet3d.structures import (CameraInstance3DBoxes, LiDARInstance3DBoxes,
-                                bbox3d2result, xywhr2xyxyr)
-
 from mmdet3d.evaluation.metrics.nuscenes_metric import NuScenesMetric
 
 @METRICS.register_module()
-class CustomNuScenesMetric(NuScenesMetric):
-    """Nuscenes evaluation metric.
+class SortedNuScenesMetric(NuScenesMetric):
+    """Nuscenes evaluation metric with data sorted.
 
     Args:
         data_root (str): Path of dataset root.
@@ -61,7 +47,7 @@ class CustomNuScenesMetric(NuScenesMetric):
                  eval_version: str = 'detection_cvpr_2019',
                  collect_device: str = 'cpu',
                  backend_args: Optional[dict] = None) -> None:
-        super(CustomNuScenesMetric, self).__init__(
+        super(SortedNuScenesMetric, self).__init__(
             data_root, ann_file, metric, modality, prefix, format_only,
             jsonfile_prefix, eval_version, collect_device, backend_args)
 

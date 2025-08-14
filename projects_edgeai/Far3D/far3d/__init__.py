@@ -13,13 +13,11 @@ from .petr_transformer import (PETRMultiheadAttention,
                                PETRTemporalTransformer,
                                PETRTemporalDecoderLayer)
 from .transforms_3d import (GlobalRotScaleTransImage, ResizeCropFlipRotImage,
-                            CustomMultiScaleFlipAug3D, CustomPack3DDetInputs)
+                            CustomPack3DDetInputs)
 from .vovnet import VoVNet
 from .loading import StreamPETRLoadAnnotations3D
 
 from .nuscenes_dataset import Far3DNuScenesDataset
-from .nuscenes_metric import CustomNuScenesMetric
-
 from .data_preprocessor import Far3DDataPreprocessor
 
 from .hook import UseGtDepthHook
@@ -28,13 +26,13 @@ from .detr3d_transformer import *
 
 __all__ = [
     'GlobalRotScaleTransImage', 'ResizeCropFlipRotImage',
-    'CustomMultiScaleFlipAug3D', 'CustomPack3DDetInputs', 'VoVNet',
+    'CustomPack3DDetInputs', 'VoVNet',
     'StreamPETRHead', 'FarHead', 'FocalHead', 'YOLOXHeadCustom', 'CPFPN', 
     'HungarianAssigner2D', 'HungarianAssigner3D', 'NMSFreeCoder',
     'BBox3DL1Cost',
     'PETRMultiheadAttention', 'PETRTemporalDecoderLayer', 'PETRTemporalTransformer',
     'StreamPETR', 'Far3D',
-    'StreamPETRLoadAnnotations3D', 'Far3DNuScenesDataset', 'CustomNuScenesMetric',
+    'StreamPETRLoadAnnotations3D', 'Far3DNuScenesDataset',
     'Far3DDataPreprocessor',
-    'UseGtDepthHook', 
+    'UseGtDepthHook',
 ]

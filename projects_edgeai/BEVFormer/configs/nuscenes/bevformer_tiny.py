@@ -13,7 +13,8 @@ _base_ = [
     'mmdet3d::_base_/schedules/cyclic-20e.py'
 ]
 
-custom_imports = dict(imports=['projects_edgeai.BEVFormer.bevformer'])
+custom_imports = dict(imports=['projects_edgeai.BEVFormer.bevformer',
+                               'projects_edgeai.edgeai_mmdet3d'])
 
 
 # If point cloud range is changed, the models should also change their point
@@ -260,7 +261,7 @@ test_dataloader = val_dataloader
 
 
 val_evaluator = dict(
-    type='CustomNuScenesMetric',
+    type='SortedNuScenesMetric',
     data_root=data_root,
     ann_file=data_root + 'nuscenes_infos_val.pkl',
     metric='bbox',

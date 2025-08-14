@@ -5,7 +5,8 @@ _base_ = [
 ]
 
 backbone_norm_cfg = dict(type='LN', requires_grad=True)
-custom_imports = dict(imports=['projects_edgeai.PETR.petr'])
+custom_imports = dict(imports=['projects_edgeai.PETR.petr',
+                               'projects_edgeai.edgeai_mmdet3d'])
 
 
 randomness = dict(seed=1, deterministic=False, diff_rank_seed=False)
@@ -302,7 +303,7 @@ val_dataloader = dict(
 
 
 val_evaluator = dict(
-    type='CustomNuScenesMetric',
+    type='SortedNuScenesMetric',
     data_root=data_root,
     ann_file=data_root + 'nuscenes_long_infos_val.pkl',
     metric='bbox',

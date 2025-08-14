@@ -5,7 +5,8 @@ _base_ = [
 ]
 
 backbone_norm_cfg = dict(type='LN', requires_grad=True)
-custom_imports = dict(imports=['projects_edgeai.PETR.petr'])
+custom_imports = dict(imports=['projects_edgeai.PETR.petr',
+                               'projects_edgeai.edgeai_mmdet3d'])
 
 randomness = dict(seed=1, deterministic=False, diff_rank_seed=False)
 # If point cloud range is changed, the models should also change their point

@@ -7,7 +7,7 @@ from mmdet3d.registry import METRICS
 from mmdet3d.evaluation.metrics.pandaset_metric import PandaSetMetric
 
 @METRICS.register_module()
-class CustomPandaSetMetric(PandaSetMetric):
+class SortedPandaSetMetric(PandaSetMetric):
 
     def compute_metrics(self, results: List[dict]) -> Dict[str, float]:
         self.bbox_type_3d = type(results[0]['pred_instances_3d']['bboxes_3d'])
@@ -44,5 +44,4 @@ class CustomPandaSetMetric(PandaSetMetric):
         if tmp_dir is not None:
             tmp_dir.cleanup()
         return metric_dict
-
 

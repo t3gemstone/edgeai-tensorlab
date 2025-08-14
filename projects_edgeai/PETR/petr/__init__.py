@@ -14,7 +14,6 @@ from .vovnetcp import VoVNetCP
 from .loading import LoadMultiViewImageFromMultiSweepsFiles
 
 from .nuscenes_dataset import PETRv2NuScenesDataset
-from .nuscenes_metric import CustomNuScenesMetric
 
 __all__ = [
     'GlobalRotScaleTransImage', 'ResizeCropFlipImage',
@@ -27,5 +26,5 @@ __all__ = [
     'PETR',
     'SinePositionalEncoding3D',
     'LoadMultiViewImageFromMultiSweepsFiles',
-    'PETRv2NuScenesDataset', 'CustomNuScenesMetric',
+    'PETRv2NuScenesDataset',
 ]

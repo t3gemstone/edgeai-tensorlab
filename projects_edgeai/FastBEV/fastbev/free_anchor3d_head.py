@@ -14,7 +14,7 @@ from .box3d_nms import box3d_multiclass_scale_nms, box3d_multiclass_scale_nms_py
                        box3d_multiclass_nms, box3d_multiclass_nms_python, box3d_multiclass_nms_python_simple
 
 @MODELS.register_module()
-class CustomFreeAnchor3DHead(FreeAnchor3DHead):
+class FastBEVFreeAnchor3DHead(FreeAnchor3DHead):
     r"""`FreeAnchor <https://arxiv.org/abs/1909.02466>`_ head for 3D detection.
 
     Note:

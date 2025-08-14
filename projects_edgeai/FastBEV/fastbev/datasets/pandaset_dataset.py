@@ -1,4 +1,4 @@
-from .nuscenes_dataset import CustomNuScenesDataset
+from .nuscenes_dataset import FastBEVNuScenesDataset
 from mmdet3d.datasets import PandaSetDataset
 import torch
 import numpy as np
@@ -17,7 +17,7 @@ def tofloat(x):
     return x.astype(np.float32) if x is not None else None
 
 @DATASETS.register_module()
-class CustomPandaSetDataset(CustomNuScenesDataset, PandaSetDataset):
+class FastBEVPandaSetDataset(FastBEVNuScenesDataset, PandaSetDataset):
     def __init__(self, 
                  with_box2d=False,
                  sequential=False,
@@ -71,6 +71,6 @@ class CustomPandaSetDataset(CustomNuScenesDataset, PandaSetDataset):
                 self.label_mapping[k] = self.get_label_func(k)
             self.label_mapping_changed = True
 
-        # CustomNuScenesDataset::full_init()
+        # FastBEVNuScenesDataset::full_init()
         super().full_init() 
         self.num_ins_per_cat = self.new_num_ins_per_cat

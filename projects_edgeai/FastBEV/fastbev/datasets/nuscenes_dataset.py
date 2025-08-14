@@ -21,7 +21,7 @@ def tofloat(x):
     return x.astype(np.float32) if x is not None else None
 
 @DATASETS.register_module()
-class CustomNuScenesDataset(NuScenesDataset):
+class FastBEVNuScenesDataset(NuScenesDataset):
     
     def __init__(self,
                  with_box2d=False,

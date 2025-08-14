@@ -13,7 +13,8 @@ _base_ = [
     'mmdet3d::_base_/schedules/cyclic-20e.py'
 ]
 
-custom_imports = dict(imports=['projects_edgeai.BEVFormer.bevformer'])
+custom_imports = dict(imports=['projects_edgeai.BEVFormer.bevformer',
+                               'projects_edgeai.edgeai_mmdet3d'])
 
 
 # If point cloud range is changed, the models should also change their point
@@ -258,7 +259,7 @@ test_dataloader = val_dataloader
 
 
 val_evaluator = dict(
-    type='CustomPandaSetMetric',
+    type='SortedPandaSetMetric',
     data_root=data_root,
     max_dists=[50, 50],
     ann_file=data_root + 'pandaset_infos_val.pkl',
