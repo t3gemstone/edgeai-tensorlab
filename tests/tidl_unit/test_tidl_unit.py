@@ -223,6 +223,7 @@ def perform_tidl_unit_oneprocess(tidl_offload : bool, run_infer : bool, work_dir
         runtime_options  = settings.get_runtime_options(session_name, is_qat=False, debug_level = 0)
         runtime_options["advanced_options:quantization_scale_type"] = constants.QUANTScaleType.QUANT_SCALE_TYPE_NP2_PERCHAN
         runtime_options["onnxruntime:graph_optimization_level"] = onnxruntime.GraphOptimizationLevel.ORT_DISABLE_ALL
+        runtime_options["onnxruntime:intra_op_num_threads"] = 1
         runtime_options["advanced_options:temp_buffer_dir"] = temp_buffer_dir
         if flow_control != -1:
             runtime_options["advanced_options:flow_ctrl"] = flow_control
@@ -290,6 +291,7 @@ def perform_tidl_unit_oneprocess(tidl_offload : bool, run_infer : bool, work_dir
         runtime_options  = settings.get_runtime_options(session_name, is_qat=False, debug_level = 0)
         runtime_options["advanced_options:quantization_scale_type"] = constants.QUANTScaleType.QUANT_SCALE_TYPE_NP2_PERCHAN
         runtime_options["onnxruntime:graph_optimization_level"] = onnxruntime.GraphOptimizationLevel.ORT_DISABLE_ALL
+        runtime_options["onnxruntime:intra_op_num_threads"] = 1
         runtime_options["advanced_options:temp_buffer_dir"] = temp_buffer_dir
 
         if runtime == "onnxrt":

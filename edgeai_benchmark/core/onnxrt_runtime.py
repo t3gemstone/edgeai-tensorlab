@@ -111,6 +111,12 @@ class ONNXRuntimeWrapper(BaseRuntimeWrapper):
             # to onnxruntime.GraphOptimizationLevel.ORT_DISABLE_ALL so that TIDL can properly handle the model.
             sess_options.graph_optimization_level = onnxruntime_graph_optimization_level
 
+        onnxruntime_intra_op_num_threads = runtime_options.get('onnxruntime:intra_op_num_threads', None)
+        if onnxruntime_intra_op_num_threads is not None:
+            # for scatterND operator, onnx performs reductions in multithreading due to which output may differ
+            # in different runs. Adding this option to get stable output.
+            sess_options.intra_op_num_threads = onnxruntime_intra_op_num_threads
+
         # suppress warnings
         sess_options.log_severity_level = 3
 
