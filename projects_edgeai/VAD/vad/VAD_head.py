@@ -20,7 +20,7 @@ from mmcv.cnn import Linear, build_activation_layer
 from mmcv.cnn.bricks.transformer import build_transformer_layer_sequence
 from mmdet3d.registry import MODELS, TASK_UTILS
 
-from .bbox.util import normalize_bbox
+from projects_edgeai.edgeai_mmdet3d.utils import normalize_bbox_type1
 from .utils.traj_lr_warmup import get_traj_warmup_loss_weight
 from .utils.map_utils import (
     normalize_2d_pts, normalize_2d_bbox, denormalize_2d_pts, denormalize_2d_bbox
@@ -1541,7 +1541,7 @@ class VADHead(AnchorFreeHead):
 
         # regression L1 loss
         bbox_preds = bbox_preds.reshape(-1, bbox_preds.size(-1))
-        normalized_bbox_targets = normalize_bbox(bbox_targets, self.pc_range)
+        normalized_bbox_targets = normalize_bbox_type1(bbox_targets, self.pc_range)
         isnotnan = torch.isfinite(normalized_bbox_targets).all(dim=-1)
         bbox_weights = bbox_weights * self.code_weights
         loss_bbox = self.loss_bbox(

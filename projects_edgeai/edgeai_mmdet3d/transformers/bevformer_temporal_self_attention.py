@@ -5,18 +5,16 @@
 # ---------------------------------------------
 
 import warnings
+import math
 import torch
 import torch.nn as nn
-import math
 
-from mmengine.model import BaseModule, ModuleList, Sequential
+from mmengine.model import BaseModule
 from mmengine.model import xavier_init, constant_init
-from mmengine import ConfigDict
+from mmcv.utils import ext_loader
 from mmdet3d.registry import MODELS
 from mmdet3d.models.utils.multi_scale_deform_attn import multi_scale_deformable_attn_pytorch
 
-
-from mmcv.utils import ext_loader
 ext_module = ext_loader.load_ext(
     '_ext', ['ms_deform_attn_backward', 'ms_deform_attn_forward'])
 

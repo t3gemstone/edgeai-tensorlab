@@ -4,28 +4,20 @@
 #  Modified by Zhiqi Li
 # ---------------------------------------------
 
-from mmdet3d.models.utils.multi_scale_deform_attn import multi_scale_deformable_attn_pytorch
-import mmcv
-import cv2 as cv
-import copy
 import warnings
-from matplotlib import pyplot as plt
-import numpy as np
+import math
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
-import math
 
 from mmdet.models.layers.transformer import inverse_sigmoid
-from mmengine.model import BaseModule, ModuleList, Sequential
+from mmengine.model import BaseModule
 from mmengine.model import xavier_init, constant_init
-from mmengine import ConfigDict
 from mmengine.utils import deprecated_api_warning
-from mmdet3d.registry import MODELS
 from mmcv.cnn.bricks.transformer import (BaseTransformerLayer,
                                          TransformerLayerSequence)
 from mmcv.utils import ext_loader
-                        
+from mmdet3d.registry import MODELS
+from mmdet3d.models.utils.multi_scale_deform_attn import multi_scale_deformable_attn_pytorch
 
 ext_module = ext_loader.load_ext(
     '_ext', ['ms_deform_attn_backward', 'ms_deform_attn_forward'])

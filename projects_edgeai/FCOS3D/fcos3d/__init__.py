@@ -1,8 +1,5 @@
-from .fcos_mono3d_head import CustomFCOSMono3DHead
-from .modulated_deform_conv_tidl import ModulatedDeformConv2dTIDL
-
+from .fcos_mono3d_head import TIDLFCOSMono3DHead
 
 __all__ = [
-    'CustomFCOSMono3DHead',
-    'ModulatedDeformConv2dTIDL'
+    'TIDLFCOSMono3DHead',
 ]

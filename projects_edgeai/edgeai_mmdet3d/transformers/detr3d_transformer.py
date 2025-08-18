@@ -1,24 +1,22 @@
+import copy
+import warnings
 import torch
 import torch.nn as nn
-
-from mmengine.model import BaseModule, constant_init, xavier_init
-from mmcv.cnn import build_norm_layer
-from mmcv.cnn.bricks.transformer import (BaseTransformerLayer,
-                                         TransformerLayerSequence,
-                                         build_attention,
-                                         build_feedforward_network)
-from mmcv.ops.multi_scale_deform_attn import MultiScaleDeformableAttnFunction
-from mmdet3d.models.utils.multi_scale_deform_attn import multi_scale_deformable_attn_pytorch
-
-
-from .positional_encoding import pos2posemb3d
-from mmengine.config import ConfigDict
-import warnings
-import copy
 from torch.nn import ModuleList
 import torch.utils.checkpoint as cp
 
+from mmengine.model import BaseModule, constant_init, xavier_init
+from mmengine.config import ConfigDict
+from mmcv.cnn import build_norm_layer
+from mmcv.cnn.bricks.transformer import (TransformerLayerSequence,
+                                         build_attention,
+                                         build_feedforward_network)
+from mmcv.ops.multi_scale_deform_attn import MultiScaleDeformableAttnFunction
+
 from mmdet3d.registry import MODELS
+from mmdet3d.models.utils.multi_scale_deform_attn import multi_scale_deformable_attn_pytorch
+
+
 
 # Disable warnings
 warnings.filterwarnings("ignore")

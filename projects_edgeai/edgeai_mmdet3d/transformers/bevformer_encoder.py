@@ -5,20 +5,18 @@
 #  Modified by Zhiqi Li
 # ---------------------------------------------
 
-import numpy as np
-import torch
 import copy
 import warnings
+import numpy as np
+import torch
 
-from mmdet3d.registry import MODELS
 from mmcv.utils import ext_loader
 from mmcv.cnn.bricks.transformer import TransformerLayerSequence
-
 from mmengine.utils import digit_version
 from mmengine.utils.dl_utils import TORCH_VERSION
+from mmdet3d.registry import MODELS
 
-
-from .custom_base_transformer_layer import MyCustomBaseTransformerLayer
+from .bevformer_base_transformer_layer import BEVFormerBaseTransformerLayer
 ext_module = ext_loader.load_ext(
     '_ext', ['ms_deform_attn_backward', 'ms_deform_attn_forward'])
 
@@ -264,7 +262,7 @@ class BEVFormerEncoder(TransformerLayerSequence):
 
 
 @MODELS.register_module()
-class BEVFormerLayer(MyCustomBaseTransformerLayer):
+class BEVFormerLayer(BEVFormerBaseTransformerLayer):
     """Implements decoder layer in DETR transformer.
     Args:
         attn_cfgs (list[`mmcv.ConfigDict`] | list[dict] | dict )):

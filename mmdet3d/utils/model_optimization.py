@@ -38,7 +38,7 @@ from mmcv.ops.modulated_deform_conv import ModulatedDeformConv2dPack
 import edgeai_torchmodelopt
 from edgeai_torchmodelopt import xmodelopt, xops
 
-from projects_edgeai.FCOS3D.fcos3d.modulated_deform_conv_tidl import ModulatedDeformConv2dTIDL
+from projects_edgeai.edgeai_mmdet3d.convs.modulated_deform_conv_tidl import ModulatedDeformConv2dTIDL
 
 
 def wrap_fn_for_bbox_head(fn, module:nn.Module, *args, **kwargs):

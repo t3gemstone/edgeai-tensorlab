@@ -140,9 +140,9 @@ model = dict(
         # Scale-NMS
         nms_type_list=[
             'circle', 'circle', 'circle', 'circle', 'circle', 'circle', 'circle', 'circle', 'circle', 'circle'],
-        nms_thr_list=[0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.5, 0.5, 0.2],
-        nms_radius_thr_list=[4, 12, 10, 10, 12, 0.85, 0.85, 0.175, 0.175, 1],
-        nms_rescale_factor=[1.0, 0.7, 0.55, 0.4, 0.7, 1.0, 1.0, 4.5, 9.0, 1.0],
+        nms_thr_list=[0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.5, 0.5],
+        nms_radius_thr_list=[4, 12, 12, 10, 10, 1, 0.85, 0.85, 0.175, 0.175],
+        nms_rescale_factor=[1.0, 0.7, 0.7, 0.4, 0.55, 1.0, 1.0, 1.0, 4.5, 9.0],
     )
 )
 
@@ -314,6 +314,7 @@ test_evaluator = val_evaluator
 
 
 # Optimizer
+# lr=0.0002 for num_gpus*batch_size = 8
 optim_wrapper = dict(
     optimizer=dict(type='AdamW', lr=0.0002, weight_decay=0.01),
     paramwise_cfg=dict(custom_keys={

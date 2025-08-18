@@ -5,7 +5,6 @@ from mmdet3d.registry import TASK_UTILS
 from mmdet.models.task_modules.assigners import AssignResult
 from mmdet.models.task_modules.assigners import BaseAssigner
 
-from ..util import normalize_bbox
 from ...utils.map_utils import (
     normalize_2d_bbox, normalize_2d_pts, denormalize_2d_bbox
 )

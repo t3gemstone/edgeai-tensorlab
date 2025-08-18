@@ -310,9 +310,12 @@ val_evaluator = dict(
     backend_args=backend_args)
 test_evaluator = val_evaluator
 
-
+# Optimizer
+# lr=0.0002 for num_gpus*batch_size = 4
+# Note: lr=0.0002 with num_gpus*batch_size = 8 (e.g. num_gpus=4, batch_size=2)
+#       may improve accuracy 
 optim_wrapper = dict(
-    optimizer=dict(type='AdamW', lr=1e-4, weight_decay=0.01),
+    optimizer=dict(type='AdamW', lr=2e-4, weight_decay=0.01),
     paramwise_cfg=dict(custom_keys={
         'img_backbone': dict(lr_mult=0.1),
     }),

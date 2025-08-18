@@ -6,18 +6,16 @@
 
 import copy
 import warnings
-
 import torch
-import torch.nn as nn
 
 from mmengine import ConfigDict
-from mmengine.model import BaseModule, ModuleList, Sequential
+from mmengine.model import BaseModule, ModuleList
+from mmcv.cnn import build_norm_layer
+from mmcv.cnn.bricks.transformer import build_feedforward_network, build_attention
 from mmdet3d.registry import MODELS
 
-from mmcv.cnn import build_norm_layer
-
-
 # Avoid BC-breaking of importing MultiScaleDeformableAttention from this file
+'''
 try:
     from mmcv.ops.multi_scale_deform_attn import MultiScaleDeformableAttention  # noqa F401
     warnings.warn(
@@ -31,11 +29,11 @@ except ImportError:
     warnings.warn('Fail to import ``MultiScaleDeformableAttention`` from '
                   '``mmcv.ops.multi_scale_deform_attn``, '
                   'You should install ``mmcv-full`` if you need this module. ')
-from mmcv.cnn.bricks.transformer import build_feedforward_network, build_attention
+'''
 
 
 @MODELS.register_module()
-class MyCustomBaseTransformerLayer(BaseModule):
+class BEVFormerBaseTransformerLayer(BaseModule):
     """Base `TransformerLayer` for vision transformer.
     It can be built from `mmcv.ConfigDict` and support more flexible
     customization, for example, using any number of `FFN or LN ` and
@@ -98,7 +96,7 @@ class MyCustomBaseTransformerLayer(BaseModule):
                     f'to a dict named `ffn_cfgs`. ')
                 ffn_cfgs[new_name] = kwargs[ori_name]
 
-        super(MyCustomBaseTransformerLayer, self).__init__(init_cfg)
+        super(BEVFormerBaseTransformerLayer, self).__init__(init_cfg)
 
         self.batch_first = batch_first
 

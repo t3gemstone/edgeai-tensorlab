@@ -263,6 +263,8 @@ val_dataloader = dict(
         use_valid_flag=True,
         backend_args=backend_args))
 
+# Optimizer
+# lr=0.0002 for num_gpus*batch_size = 8
 optim_wrapper = dict(
     optimizer=dict(type='AdamW', lr=2e-4, weight_decay=0.01),
     paramwise_cfg=dict(custom_keys={

@@ -21,7 +21,7 @@ model = dict(
         dcn=dict(type='DCNv2_tidl', deform_groups=1, fallback_on_stride=False),
         stage_with_dcn=(False, False, True, True)),
     bbox_head=dict(
-        type='CustomFCOSMono3DHead',
+        type='TIDLFCOSMono3DHead',
         dcn_on_last_conv=True,
         num_classes=5, 
         num_attrs=18,),

@@ -286,6 +286,8 @@ test_evaluator = val_evaluator
 
 
 # Optimizer
+# lr=0.0002 for num_gpus*batch_size = 8
+# Optimizer
 optim_wrapper = dict(
     optimizer=dict(type='AdamW', lr=2e-4, weight_decay=1e-07),
     #paramwise_cfg=dict(custom_keys={

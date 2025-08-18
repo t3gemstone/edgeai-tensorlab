@@ -22,8 +22,8 @@ from mmengine.model.weight_init import bias_init_with_prob
 from mmengine.structures import InstanceData
 
 from mmdet3d.registry import MODELS, TASK_UTILS
-from .utils import normalize_bbox
-from .positional_encoding import pos2posemb3d
+from projects_edgeai.edgeai_mmdet3d.utils import normalize_bbox_type1
+from projects_edgeai.edgeai_mmdet3d.positional_encodings.positional_encoding import pos2posemb3d
 
 
 
@@ -695,7 +695,7 @@ class PETRHead(AnchorFreeHead):
 
         # regression L1 loss
         bbox_preds = bbox_preds.reshape(-1, bbox_preds.size(-1))
-        normalized_bbox_targets = normalize_bbox(bbox_targets, self.pc_range)
+        normalized_bbox_targets = normalize_bbox_type1(bbox_targets, self.pc_range)
         isnotnan = torch.isfinite(normalized_bbox_targets).all(dim=-1)
         bbox_weights = bbox_weights * self.code_weights
 

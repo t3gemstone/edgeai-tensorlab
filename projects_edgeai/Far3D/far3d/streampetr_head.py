@@ -21,12 +21,13 @@ from mmdet.models.utils import multi_apply
 from mmdet.utils import reduce_mean
 from mmdet.models.dense_heads.anchor_free_head import AnchorFreeHead
 from mmdet.models.layers.transformer import inverse_sigmoid
-from .utils import normalize_bbox_streampetr
+from mmdet.models.layers import NormedLinear
 
 from mmdet3d.registry import MODELS, TASK_UTILS
 
-from mmdet.models.layers import NormedLinear
-from .positional_encoding import pos2posemb3d, pos2posemb1d, nerf_positional_encoding
+from projects_edgeai.edgeai_mmdet3d.utils import normalize_bbox_type2
+from projects_edgeai.edgeai_mmdet3d.positional_encodings.positional_encoding import pos2posemb3d
+from .positional_encoding import pos2posemb1d, nerf_positional_encoding
 from .utils import MLN, topk_gather, transform_reference_points, memory_refresh, SELayer_Linear
 
 
@@ -920,7 +921,7 @@ class StreamPETRHead(AnchorFreeHead):
 
         # regression L1 loss
         bbox_preds = bbox_preds.reshape(-1, bbox_preds.size(-1))
-        normalized_bbox_targets = normalize_bbox_streampetr(bbox_targets, self.pc_range)
+        normalized_bbox_targets = normalize_bbox_type2(bbox_targets, self.pc_range)
         isnotnan = torch.isfinite(normalized_bbox_targets).all(dim=-1)
         bbox_weights = bbox_weights * self.code_weights
 
@@ -976,7 +977,7 @@ class StreamPETRHead(AnchorFreeHead):
 
         # regression L1 loss
         bbox_preds = bbox_preds.reshape(-1, bbox_preds.size(-1))
-        normalized_bbox_targets = normalize_bbox_streampetr(known_bboxs, self.pc_range)
+        normalized_bbox_targets = normalize_bbox_type2(known_bboxs, self.pc_range)
         isnotnan = torch.isfinite(normalized_bbox_targets).all(dim=-1)
 
         bbox_weights = bbox_weights * self.code_weights

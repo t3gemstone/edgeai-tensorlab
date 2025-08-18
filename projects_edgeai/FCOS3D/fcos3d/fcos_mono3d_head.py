@@ -8,8 +8,8 @@ from torch import nn as nn
 
 
 @MODELS.register_module()
-class CustomFCOSMono3DHead(FCOSMono3DHead):
-    """Custom Anchor-free head used in FCOS3D.
+class TIDLFCOSMono3DHead(FCOSMono3DHead):
+    """ Anchor-free head used in FCOS3D for TIDL
     """
 
     def _init_cls_convs(self):
@@ -51,4 +51,4 @@ class CustomFCOSMono3DHead(FCOSMono3DHead):
                     conv_cfg=conv_cfg,
                     norm_cfg=self.norm_cfg,
                     bias=self.conv_bias))                    
-    
+

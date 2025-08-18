@@ -2,7 +2,7 @@ import torch
 
 from mmdet.models.task_modules import BaseBBoxCoder
 from mmdet3d.registry import TASK_UTILS
-from .bbox.util import denormalize_bbox
+from projects_edgeai.edgeai_mmdet3d.utils import denormalize_bbox_type1
 import numpy as np
 
 
@@ -58,7 +58,7 @@ class CustomNMSFreeCoder(BaseBBoxCoder):
         bbox_preds = bbox_preds[bbox_index]
         traj_preds = traj_preds[bbox_index]
        
-        final_box_preds = denormalize_bbox(bbox_preds, self.pc_range)   
+        final_box_preds = denormalize_bbox_type1(bbox_preds, self.pc_range)
         final_scores = scores 
         final_preds = labels
         final_traj_preds = traj_preds

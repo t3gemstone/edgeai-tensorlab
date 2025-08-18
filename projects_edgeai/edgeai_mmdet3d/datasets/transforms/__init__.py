@@ -1,5 +1,5 @@
-from .transforms_3d import CustomMultiScaleFlipAug3D
+from .transforms_3d import RandomScaleImageMultiViewImage, CustomMultiScaleFlipAug3D
 
 __all__ = [
-    'CustomMultiScaleFlipAug3D'
+    'RandomScaleImageMultiViewImage', 'CustomMultiScaleFlipAug3D'
 ]

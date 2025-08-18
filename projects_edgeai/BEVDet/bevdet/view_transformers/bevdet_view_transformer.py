@@ -358,7 +358,7 @@ class LSSViewTransformer(BaseModule):
     def view_transform_tidl(self, img, sensor2ego, cam2img, lidar2cam, ego2global, post_rts, bda,
                             depth, tran_feat):
         B, N, C, H, W = img.shape
-
+        # coor: [1, 6, 59, 16, 44, 3]
         coor = self.get_lidar_coor(sensor2ego, cam2img, lidar2cam, ego2global, post_rts, bda)
         bev_feat, lidar_coor_1d = self.precompute_1d_voxel_info(coor)
 
@@ -366,15 +366,15 @@ class LSSViewTransformer(BaseModule):
         feat = feat.permute(0, 2, 3, 4, 1)
         feat = feat.reshape(B*N*self.D*H*W, self.out_channels)
 
-        num_grids = self.grid_size[2]*self.grid_size[1]*self.grid_size[0]
+        num_grids = self.grid_size[2]*self.grid_size[1]*self.grid_size[0] # grid_size: 128 x 128 x 1
         bev_feat = bev_feat.index_put_(tuple([lidar_coor_1d]), feat, accumulate=True)
         
-        bev_feat = bev_feat[:int(num_grids.item()), :]
-        bev_feat = bev_feat.reshape(1, int(self.grid_size[2].item()), int(self.grid_size[1].item()), int(self.grid_size[0].item()), self.out_channels)
-        bev_feat = bev_feat.permute(0, 4, 1, 2, 3)
+        bev_feat = bev_feat[:int(num_grids.item()), :] # bev_feat = [16384, 64]
+        bev_feat = bev_feat.reshape(1, int(self.grid_size[2].item()), int(self.grid_size[1].item()), int(self.grid_size[0].item()), self.out_channels) # [1, 1, 128, 128, 64]
+        bev_feat = bev_feat.permute(0, 4, 1, 2, 3) # [1, 64, 1, 128, 128]
 
         # collapse Z
-        bev_feat = torch.cat(bev_feat.unbind(dim=2), 1)
+        bev_feat = torch.cat(bev_feat.unbind(dim=2), 1) # [1, 64, 128, 128]
         return bev_feat, depth
 
 

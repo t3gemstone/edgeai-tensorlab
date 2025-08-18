@@ -228,7 +228,7 @@ test_pipeline = [
             file_client_args=file_client_args)]),
     dict(type='RandomAugImageMultiViewImage', data_config=data_config, is_train=False),
     dict(type='ResetPointOrigin', point_cloud_range=point_cloud_range),
-    dict(type='ack3DDetInputs', keys=['img'], meta_keys=meta_keys)
+    dict(type='Pack3DDetInputs', keys=['img'], meta_keys=meta_keys)
     ]
 
 class_mapping = [

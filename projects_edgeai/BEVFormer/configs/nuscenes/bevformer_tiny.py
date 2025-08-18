@@ -268,7 +268,8 @@ val_evaluator = dict(
     backend_args=None)
 test_evaluator = val_evaluator
 
-
+# Optimizer
+# lr=0.0002 for num_gpus*batch_size = 8
 optim_wrapper = dict(
     type='OptimWrapper',
     optimizer=dict(type='AdamW', lr=2e-4, weight_decay=0.01),

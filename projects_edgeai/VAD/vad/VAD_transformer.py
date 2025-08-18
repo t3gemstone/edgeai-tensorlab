@@ -10,9 +10,9 @@ from torchvision.transforms import _functional_tensor as F_t
 from mmcv.cnn.bricks.transformer import TransformerLayerSequence
 from mmcv.cnn.bricks.transformer import build_transformer_layer_sequence
 
-from projects_edgeai.BEVFormer.bevformer.decoder import CustomMSDeformableAttention
-from projects_edgeai.BEVFormer.bevformer.temporal_self_attention import TemporalSelfAttention
-from projects_edgeai.BEVFormer.bevformer.spatial_cross_attention import MSDeformableAttention3D
+from ...edgeai_mmdet3d.transformers.bevformer_decoder import CustomMSDeformableAttention
+from ...edgeai_mmdet3d.transformers.bevformer_temporal_self_attention import TemporalSelfAttention
+from ...edgeai_mmdet3d.transformers.bevformer_spatial_cross_attention import MSDeformableAttention3D
 
 
 ext_module = ext_loader.load_ext(

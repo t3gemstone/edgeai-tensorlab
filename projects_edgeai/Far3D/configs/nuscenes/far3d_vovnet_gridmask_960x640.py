@@ -152,7 +152,7 @@ model = dict(
             max_num=300,
             voxel_size=voxel_size,
             num_classes=10,
-            model='Far3D'), 
+            bbox_norm_type=2),
         loss_cls=dict(
             type='mmdet.FocalLoss',
             use_sigmoid=True,
@@ -174,7 +174,7 @@ model = dict(
                 reg_cost=dict(type='BBox3DL1Cost', weight=0.25),
                 iou_cost=dict(type='IoUCost', weight=0.0), # Fake cost. This is just to make it compatible with DETR head.
                 pc_range=point_cloud_range,
-                model='Far3D'))))
+                bbox_norm_type=2))))
 
 
 dataset_type = 'Far3DNuScenesDataset'
@@ -317,8 +317,10 @@ val_evaluator = dict(
 test_evaluator = val_evaluator
 
 
+# Optimizer
+# lr=0.0002 for num_gpus*batch_size = 2
 optim_wrapper = dict(
-    optimizer=dict(type='AdamW', lr=1e-4, weight_decay=0.01),
+    optimizer=dict(type='AdamW', lr=2e-4, weight_decay=0.01),
     paramwise_cfg=dict(custom_keys={
         'img_backbone': dict(lr_mult=0.1),
     }),

@@ -423,9 +423,11 @@ val_evaluator = dict(
 test_evaluator = val_evaluator
 
 
+# Optimizer
+# lr=0.0001 for num_gpus*batch_size = 4
 optim_wrapper = dict(
     type='OptimWrapper',
-    optimizer=dict(type='AdamW', lr=2e-4, weight_decay=0.01),
+    optimizer=dict(type='AdamW', lr=1e-4, weight_decay=0.01),
     paramwise_cfg=dict(custom_keys={'img_backbone': dict(lr_mult=0.1)}),
     clip_grad=dict(max_norm=35, norm_type=2),
 )

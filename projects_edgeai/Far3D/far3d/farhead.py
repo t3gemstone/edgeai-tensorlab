@@ -1,7 +1,6 @@
 import torch
 import torch.nn as nn
 import numpy as np
-import copy
 
 from mmcv.cnn import Linear
 from mmengine.model.weight_init import bias_init_with_prob
@@ -11,14 +10,15 @@ from mmdet.utils import reduce_mean
 
 from mmdet.models.dense_heads.anchor_free_head import AnchorFreeHead
 from mmdet.models.layers.transformer import inverse_sigmoid
-from .utils import normalize_bbox_streampetr
-from .positional_encoding import pos2posemb3d, pos2posemb1d, nerf_positional_encoding
-from .utils import MLN, topk_gather, transform_reference_points, memory_refresh
-
 from mmdet.models.layers import NormedLinear
 from scipy.optimize import linear_sum_assignment
 
 from mmdet3d.registry import MODELS, TASK_UTILS
+
+from projects_edgeai.edgeai_mmdet3d.utils import normalize_bbox_type2
+from projects_edgeai.edgeai_mmdet3d.positional_encodings.positional_encoding import pos2posemb3d
+from .positional_encoding import pos2posemb1d, nerf_positional_encoding
+from .utils import MLN, topk_gather, transform_reference_points, memory_refresh
 
 
 @MODELS.register_module()
@@ -1154,7 +1154,7 @@ class FarHead(AnchorFreeHead):
 
         # regression L1 loss
         bbox_preds = bbox_preds.reshape(-1, bbox_preds.size(-1))
-        normalized_bbox_targets = normalize_bbox_streampetr(bbox_targets, self.pc_range)
+        normalized_bbox_targets = normalize_bbox_type2(bbox_targets, self.pc_range)
         isnotnan = torch.isfinite(normalized_bbox_targets).all(dim=-1)
         bbox_weights = bbox_weights * self.code_weights
 
@@ -1212,7 +1212,7 @@ class FarHead(AnchorFreeHead):
 
         # regression L1 loss
         bbox_preds = bbox_preds.reshape(-1, bbox_preds.size(-1))
-        normalized_bbox_targets = normalize_bbox_streampetr(known_bboxs, self.pc_range)
+        normalized_bbox_targets = normalize_bbox_type2(known_bboxs, self.pc_range)
         isnotnan = torch.isfinite(normalized_bbox_targets).all(dim=-1)
 
         bbox_weights = bbox_weights * self.code_weights
