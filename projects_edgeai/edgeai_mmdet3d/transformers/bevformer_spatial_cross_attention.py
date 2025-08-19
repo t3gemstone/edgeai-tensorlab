@@ -217,7 +217,10 @@ class SpatialCrossAttention(BaseModule):
             #       since there are redundant query indices (i.e. 0), and the last query is picked up
             #       Because it is finally averaged using count, the difference could be negligible
             slots = slots.squeeze(0)
-            queries = queries.squeeze(0)
+            # queries.squeeze(0) is not Necessary, since it is reshaped by
+            # queries.view(-1, self.embed_dims)
+            # Also it caused shapeInference error in onnx export
+            #queries = queries.squeeze(0)
 
             # To remove indices - Add one more (2501-th) tensor
             slots = torch.cat((slots,  slots.new_zeros(1, self.embed_dims)), dim = 0)
@@ -226,6 +229,7 @@ class SpatialCrossAttention(BaseModule):
             # bev_valid_indices should be type cated to int64 for ScatterND
             all_indices = bev_valid_indices.to(torch.int64).squeeze(1)
             all_queries = queries.view(-1, self.embed_dims)
+
             """
             for i, index_query_per_img in enumerate(indexes):
                 if i == 0:

@@ -36,6 +36,7 @@ class ModulatedDeformConv2dTIDL(ModulatedDeformConv2dPack):
     _version = 2
 
     def __init__(self, *args, **kwargs):
+        self.grid_sample_mode = kwargs.pop('grid_sample_mode', 'bilinear')
         super().__init__(*args, **kwargs)
 
 
@@ -108,7 +109,7 @@ class ModulatedDeformConv2dTIDL(ModulatedDeformConv2dPack):
         # output: 1xCx(9*Ho)xWo
         sampling_feature = F.grid_sample(x,
                                          offset_grid,
-                                         mode='bilinear',
+                                         mode=self.grid_sample_mode,
                                          padding_mode='zeros',
                                          align_corners=False)
 
