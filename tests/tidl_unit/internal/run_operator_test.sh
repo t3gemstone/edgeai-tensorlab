@@ -21,7 +21,7 @@ echo \
     --nmse_threshold            Normalized Mean Squared Error (NMSE) thresehold for inference output. Default: 0.5
     --operators                 List of operators (space separated string) to run. By default every operator under tidl_unit_test_data/operators
     --runtimes                  List of runtimes (space separated string) to run tests. Allowed values are (onnxrt, tvmrt). Default=onnxrt
-    --tidl_tools_path           Path of tidl tools tarball (named as tidl_tools.tar.gz)
+    --tidl_tools_path           Path of tidl tools tarball
 
     Example:
         ./run_operator_test.sh --SOC=AM68A --run_ref=1 --run_natc=0 --run_ci=0 --save_model_artifacts=1 --operators=\"Add Mul Sqrt\" --runtimes=\"onnxrt\"
@@ -222,11 +222,18 @@ cd "$path_edge_ai_benchmark/tests/tidl_unit"
 
 # Set up tidl_tools
 mkdir -p temp
-cd temp && rm -rf tidl_tools.tar.gz && rm -rf tidl_tools
+cd temp && rm -rf *.tar.gz && rm -rf tidl_tools
+# Extract the filename from the path
+tarball_name=$(basename "$tidl_tools_path")
 cp "$tidl_tools_path" ./
-tar -xzf tidl_tools.tar.gz 
+tar -xzf "$tarball_name"
 if [ "$?" -ne 0 ]; then
     echo "[ERROR]: Could not untar $tidl_tools_path. Make sure it is a tarball"
+    exit 1
+fi
+# Check if tidl_tools directory was created after extraction
+if [ ! -d "tidl_tools" ]; then
+    echo "[ERROR]: tidl_tools directory not found after extracting $tidl_tools_path. The tarball may not contain the expected directory structure"
     exit 1
 fi
 cp -r tidl_tools/ti_cnnperfsim.out ./

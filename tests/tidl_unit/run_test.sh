@@ -134,6 +134,13 @@ fi
 if [[ "$temp_buffer_dir" == "" ]]; then
    temp_buffer_dir="/dev/shm"
 fi
+if [ "$temp_buffer_dir" != "/dev/shm" ]; then
+    mkdir -p $temp_buffer_dir
+    if [ $? -ne 0 ]; then
+        echo "[WARNING]: Could not create $temp_buffer_dir. Using default location for redirecting temporary buffers"
+        temp_buffer_dir="/dev/shm"
+    fi
+fi
 
 if [ "$run_compile" != "1" ] && [ "$run_compile" != "0" ]; then
     echo "[ERROR]: RUN_COMPILE: $run_compile is not allowed."
@@ -154,9 +161,6 @@ if [ "$flow_ctrl" != "0" ] && [ "$flow_ctrl" != "1" ] && [ "$flow_ctrl" != "12" 
     echo "[ERROR]: flow_ctrl: $flow_ctrl is not allowed."
     echo "         Allowed values are (0,1,12)"
     exit 1
-fi
-if [ "$temp_buffer_dir" != "/dev/shm" ]; then
-    mkdir -p $temp_buffer_dir
 fi
 
 echo "##################################################################"
