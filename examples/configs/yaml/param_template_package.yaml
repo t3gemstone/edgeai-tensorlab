@@ -31,6 +31,7 @@ session:
   session_name: onnxrt
   target_device: AM68A
 postprocess:
+  reshape_list: null
   label_offset_pred: 0
   formatter:
     dst_indices:
@@ -46,5 +47,7 @@ postprocess:
   shuffle_indices: null
   squeeze_axis: null
   logits_bbox_to_bbox_ls: false
+  keypoint: false
+  object6dpose: false  
 metric:
   label_offset_pred: null

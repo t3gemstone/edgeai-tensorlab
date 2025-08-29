@@ -87,7 +87,8 @@ session:
   num_inputs: 1
   # artifacts_folder: artifacts
 postprocess:
-  detection_threshold: 0.3
+  reshape_list: null
+  # detection_threshold: 0.3
   save_output: false
   formatter:
     src_indices:
@@ -103,6 +104,8 @@ postprocess:
   squeeze_axis: null
   ignore_index: null
   logits_bbox_to_bbox_ls: false
+  keypoint: false
+  object6dpose: false  
 metric:
   label_offset_pred: 0
 model_info:

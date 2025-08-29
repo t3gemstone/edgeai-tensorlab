@@ -127,11 +127,13 @@ class PostProcessTransforms(utils.TransformsCompose):
             else:
                 postprocess_detection += [DetectionImageSave(self.settings.num_output_frames)]
         #
-        transforms = PostProcessTransforms(None, postprocess_detection,
+        transforms = PostProcessTransforms(None, postprocess_detection, 
+                                           reshape_list=reshape_list,
                                            detection_threshold=detection_threshold,
                                            formatter=formatter, resize_with_pad=resize_with_pad,
                                            normalized_detections=normalized_detections, shuffle_indices=shuffle_indices,
-                                           squeeze_axis=squeeze_axis, ignore_index=ignore_index, logits_bbox_to_bbox_ls=logits_bbox_to_bbox_ls)
+                                           squeeze_axis=squeeze_axis, ignore_index=ignore_index, logits_bbox_to_bbox_ls=logits_bbox_to_bbox_ls,
+                                           keypoint=keypoint, object6dpose=object6dpose)
         return transforms
 
     def get_transform_detection_onnx(self, formatter=None, **kwargs):
