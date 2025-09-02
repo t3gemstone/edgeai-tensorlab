@@ -18,7 +18,7 @@ echo \
                                 Default is work_dirs/modelartifacts
     --save_model_artifacts      Whether to preserve compiled artifacts or not in work_dir. Allowed values are (0,1). Default=0
     --temp_buffer_dir           Path to redirect temporary buffers for x86 runs. Default is /dev/shm
-    --nmse_threshold            Normalized Mean Squared Error (NMSE) thresehold for inference output. Default: 0.5
+    --nmse_threshold            Normalized Mean Squared Error (NMSE) threshold for inference output. Default: 0.5
     --operators                 List of operators (space separated string) to run. By default every operator under tidl_unit_test_data/operators
     --runtimes                  List of runtimes (space separated string) to run tests. Allowed values are (onnxrt, tvmrt). Default=onnxrt
     --tidl_tools_path           Path of tidl tools tarball
@@ -177,7 +177,23 @@ fi
 
 # Operator specific nmse_threshold
 declare -A ops_nmse_threshold
+threshold="0.001"
 ops_nmse_threshold["ArgMax"]="0"
+ops_nmse_threshold["Abs"]=$threshold
+ops_nmse_threshold["Clip"]=$threshold
+ops_nmse_threshold["DepthToSpace"]=$threshold
+ops_nmse_threshold["Flatten"]=$threshold
+ops_nmse_threshold["Max"]=$threshold
+ops_nmse_threshold["Neg"]=$threshold
+ops_nmse_threshold["Pad"]=$threshold
+ops_nmse_threshold["ReduceMax"]=$threshold
+ops_nmse_threshold["ReduceMin"]=$threshold
+ops_nmse_threshold["Reshape"]=$threshold
+ops_nmse_threshold["Slice"]=$threshold
+ops_nmse_threshold["SpaceToDepth"]=$threshold
+ops_nmse_threshold["Squeeze"]=$threshold
+ops_nmse_threshold["Transpose"]=$threshold
+ops_nmse_threshold["Unsqueeze"]=$threshold
 
 if [ ${#OPERATORS[@]} -eq 0 ]; then
     OPERATORS=()

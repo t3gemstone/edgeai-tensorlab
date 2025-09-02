@@ -130,7 +130,7 @@ class TIDLUnitDataset(DatasetBase):
             expected_output = np.squeeze(expected_output.astype(float))
 
             assert expected_output.shape == output.shape, f" Shape mismatch! Expected {expected_output.shape} got {output.shape}"
-            curr_nmse = ((expected_output - output)**2/np.maximum(expected_output,1**-20)).mean()
+            curr_nmse = (np.mean((expected_output - output)**2)) / (np.maximum(np.var(expected_output), 1e-10))
 
             if np.isnan(curr_nmse) == True:
                 max_nmse = None
@@ -138,7 +138,7 @@ class TIDLUnitDataset(DatasetBase):
                 max_nmse = curr_nmse
             else:
                 max_nmse = max(max_nmse, curr_nmse)
-            
+
         return {"max_nmse" : max_nmse}
 
     
