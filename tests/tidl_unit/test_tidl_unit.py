@@ -262,18 +262,29 @@ def perform_tidl_unit_oneprocess(tidl_offload : bool, run_infer : bool, work_dir
         print()
         
         max_nmse = tidl_unit_dataset([results_list])['max_nmse']
+        max_mse  = tidl_unit_dataset([results_list])['max_mse']
 
         if max_nmse == None:
             print("MAX_NMSE: None")
         else:
             print("MAX_NMSE: {:.7f}".format(max_nmse))
+        if max_mse == None:
+            print("MAX_MSE: None")
+        else:
+            print("MAX_MSE: {:.7f}".format(max_mse))
 
-        if max_nmse == None:
+        # max_nmse can be none if output has zero variance - check max_mse in this case
+        if max_nmse == None and max_mse == None:
             del runtime_wrapper
             pytest.fail(f" Could not calculate NMSE")
-        elif(max_nmse > nmse_threshold):
-            del runtime_wrapper
-            pytest.fail(f" max_nmse of {max_nmse} is higher than threshold {nmse_threshold}")
+        elif max_nmse != None:
+            if max_nmse > nmse_threshold:
+                del runtime_wrapper
+                pytest.fail(f" max_nmse of {max_nmse} is higher than threshold {nmse_threshold}")
+        elif max_mse != None:
+            if max_mse > nmse_threshold:
+                del runtime_wrapper
+                pytest.fail(f" max_mse of {max_mse} is higher than threshold {nmse_threshold}")
 
 
     #Otherwise run import

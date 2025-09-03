@@ -41,6 +41,7 @@ def pytest_runtest_makereport(item, call):
     report.tidl_subgraphs = "Not detected"
     report.complete_tidl_offload = "Not detected"
     report.nmse = "-"
+    report.mse = "-"
     if report.when == 'call' or report.when == 'teardown':
         # Parsing subgraphs]
         if runtime == "onnxrt":
@@ -115,12 +116,17 @@ def pytest_runtest_makereport(item, call):
         if nmse_regex:
             nmse = nmse_regex.group(1)
             report.nmse = str(nmse)
+        mse_regex = re.search(r'MAX_MSE: (\d*\.\d+|\d+|None)', report.capstdout)
+        if mse_regex:
+            mse = mse_regex.group(1)
+            report.mse = str(mse)
 
 # Inserts the TIDL Subgraphs table header
 def pytest_html_results_table_header(cells):
     cells.insert(2, html.th("TIDL Subgraphs"))
     cells.insert(3, html.th("Complete TIDL Offload"))
     cells.insert(4, html.th("NMSE"))
+    cells.insert(5, html.th("MSE"))
 
 # Inserts the number of TIDL subgraphs for each row
 def pytest_html_results_table_row(report, cells):
@@ -130,3 +136,5 @@ def pytest_html_results_table_row(report, cells):
         cells.insert(3, html.td(report.complete_tidl_offload))
     if(hasattr(report,'nmse')):
         cells.insert(4, html.td(report.nmse))
+    if(hasattr(report,'mse')):
+        cells.insert(5, html.td(report.mse))
