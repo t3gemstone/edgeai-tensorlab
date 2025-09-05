@@ -74,7 +74,7 @@ def get_configs(settings, work_dir):
             session=onnx_session_type(**sessions.get_onnx_session_cfg(settings, work_dir=work_dir, input_optimization=False, tidl_onnx_model_optimizer=False),
                 runtime_options=settings.runtime_options_onnx_np2(det_options=True, ext_options={
                     'onnxruntime:graph_optimization_level': ORT_DISABLE_ALL,
-                    'advanced_options:output_feature_16bit_names_list': '/bbox_predictor/layers.1/MatMul_output_0 onnx::MatMul_4038_netFormat /box_predictor/Relu_output_0 /box_predictor/Relu_1_output_0 /bbox_predictor/layers.2/Add_output_0 4053_netFormat 4041_netFormat'
+                    'advanced_options:output_feature_16bit_names_list': '/bbox_predictor/layers.1/MatMul_output_0 onnx::MatMul_4038_netFormat /box_predictor/Relu_output_0 /box_predictor/Relu_1_output_0 /bbox_predictor/layers.2/Add_output_0 4053_netFormat 4041_netFormat /model/backbone/conv_encoder/model/act1/Relu_output_0 input.1_netFormat'
                     }),
                 model_path=f'{settings.models_path}/vision/detection/coco/hf-transformers/detr_fb_resnet50_800x800_simp.onnx'),
             postprocess=postproc_transforms.get_transform_detection_mmdet_onnx(squeeze_axis=None, normalized_detections=False, resize_with_pad=True, reshape_list=[(-1,4),(-1,1),(-1,1)],logits_bbox_to_bbox_ls=True,formatter=postprocess.DetectionXYWH2XYXYCenterXY()),
@@ -221,7 +221,7 @@ def get_configs(settings, work_dir):
                    det_options=True, ext_options={
                     'object_detection:meta_arch_type': 8,
                     'object_detection:meta_layers_names_list':f'{settings.models_path}/vision/detection/coco/edgeai-mmdet/rtmdet_m_coco_orig_640x640_20250310_model.prototxt',
-                    'advanced_options:output_feature_16bit_names_list': '360,377,394,353,370,387' #1,2,3,
+                    'advanced_options:output_feature_16bit_names_list': '360,377,394,353,370,387,input_netFormat,1,3'
                     }),
                 model_path=f'{settings.models_path}/vision/detection/coco/edgeai-mmdet/rtmdet_m_coco_orig_640x640_20250310_model.onnx'),
             postprocess=postproc_transforms.get_transform_detection_mmdet_onnx(squeeze_axis=None, normalized_detections=False, resize_with_pad=[True,'corner'], formatter=postprocess.DetectionBoxSL2BoxLS()),
@@ -239,7 +239,7 @@ def get_configs(settings, work_dir):
                    det_options=True, ext_options={
                     'object_detection:meta_arch_type': 8,
                     'object_detection:meta_layers_names_list':f'{settings.models_path}/vision/detection/coco/edgeai-mmdet/rtmdet_m_coco_lite_640x640_20250404_model.prototxt',
-                    'advanced_options:output_feature_16bit_names_list': '254,267,280,259,272,285' #1,2,
+                    'advanced_options:output_feature_16bit_names_list': '254,267,280,259,272,285,input_netFormat,2'
                     }),
                 model_path=f'{settings.models_path}/vision/detection/coco/edgeai-mmdet/rtmdet_m_coco_lite_640x640_20250404_model.onnx'),
             postprocess=postproc_transforms.get_transform_detection_mmdet_onnx(squeeze_axis=None, normalized_detections=False, resize_with_pad=[True,'corner'], formatter=postprocess.DetectionBoxSL2BoxLS()),
@@ -249,7 +249,7 @@ def get_configs(settings, work_dir):
         #rtmdet_l_orig
         'od-9208':utils.dict_update(common_cfg,
             preprocess=preproc_transforms.get_transform_onnx(640, 640, reverse_channels=True, resize_with_pad=[True,'corner'], backend='cv2', pad_color=[114, 114, 114]),
-            session=onnx_session_type(**sessions.get_onnx_session_cfg(settings, work_dir=work_dir, input_optimization=False, tidl_onnx_model_optimizer=True,
+            session=onnx_session_type(**sessions.get_onnx_session_cfg(settings, work_dir=work_dir, input_optimization=False, tidl_onnx_model_optimizer={'convert_large_global_avg_pooling_to_matmul':True, 'apply_default_optimizers':True},
                                                                       input_mean=(103.53, 116.28, 123.675),
                                                                       input_scale=(0.017429, 0.017507, 0.017125),
                                                                           ),
@@ -257,7 +257,7 @@ def get_configs(settings, work_dir):
                    det_options=True, ext_options={
                     'object_detection:meta_arch_type': 8,
                     'object_detection:meta_layers_names_list':f'{settings.models_path}/vision/detection/coco/edgeai-mmdet/rtmdet_l_coco_orig_640x640_20250310_model.prototxt',
-                    'advanced_options:output_feature_16bit_names_list': '455,472,489,448,465,482' #1,2,3,
+                    'advanced_options:output_feature_16bit_names_list': '455,472,489,448,465,482,input_netFormat,1,3'
                     }),
                 model_path=f'{settings.models_path}/vision/detection/coco/edgeai-mmdet/rtmdet_l_coco_orig_640x640_20250310_model.onnx'),
             postprocess=postproc_transforms.get_transform_detection_mmdet_onnx(squeeze_axis=None, normalized_detections=False, resize_with_pad=[True,'corner'], formatter=postprocess.DetectionBoxSL2BoxLS()),
@@ -267,7 +267,7 @@ def get_configs(settings, work_dir):
         #rtmdet_l_lite
         'od-9209':utils.dict_update(common_cfg,
             preprocess=preproc_transforms.get_transform_onnx(640, 640, reverse_channels=True, resize_with_pad=True, backend='cv2', pad_color=[114, 114, 114]),
-            session=onnx_session_type(**sessions.get_onnx_session_cfg(settings, work_dir=work_dir, input_optimization=False, tidl_onnx_model_optimizer=True,
+            session=onnx_session_type(**sessions.get_onnx_session_cfg(settings, work_dir=work_dir, input_optimization=False, tidl_onnx_model_optimizer={'convert_large_global_avg_pooling_to_matmul':True, 'apply_default_optimizers':True},
                                                                       input_mean=(103.53, 116.28, 123.675),
                                                                       input_scale=(0.017429, 0.017507, 0.017125),
                                                                           ),
@@ -275,7 +275,7 @@ def get_configs(settings, work_dir):
                    det_options=True, ext_options={
                     'object_detection:meta_arch_type': 8,
                     'object_detection:meta_layers_names_list':f'{settings.models_path}/vision/detection/coco/edgeai-mmdet/rtmdet_l_coco_lite_640x640_20250310_model.prototxt',
-                    'advanced_options:output_feature_16bit_names_list': '187,319,332,345,324,337,350' #1,2,
+                    'advanced_options:output_feature_16bit_names_list': '187,319,332,345,324,337,350,input_netFormat,2'
                     }),
                 model_path=f'{settings.models_path}/vision/detection/coco/edgeai-mmdet/rtmdet_l_coco_lite_640x640_20250310_model.onnx'),
             postprocess=postproc_transforms.get_transform_detection_mmdet_onnx(squeeze_axis=None, normalized_detections=False, resize_with_pad=True, formatter=postprocess.DetectionBoxSL2BoxLS()),
