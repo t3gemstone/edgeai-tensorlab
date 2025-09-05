@@ -249,7 +249,7 @@ def get_configs(settings, work_dir):
         #rtmdet_l_orig
         'od-9208':utils.dict_update(common_cfg,
             preprocess=preproc_transforms.get_transform_onnx(640, 640, reverse_channels=True, resize_with_pad=[True,'corner'], backend='cv2', pad_color=[114, 114, 114]),
-            session=onnx_session_type(**sessions.get_onnx_session_cfg(settings, work_dir=work_dir, input_optimization=False, tidl_onnx_model_optimizer={'convert_large_global_avg_pooling_to_matmul':True, 'apply_default_optimizers':True},
+            session=onnx_session_type(**sessions.get_onnx_session_cfg(settings, work_dir=work_dir, input_optimization=False, tidl_onnx_model_optimizer=True,
                                                                       input_mean=(103.53, 116.28, 123.675),
                                                                       input_scale=(0.017429, 0.017507, 0.017125),
                                                                           ),
@@ -267,7 +267,7 @@ def get_configs(settings, work_dir):
         #rtmdet_l_lite
         'od-9209':utils.dict_update(common_cfg,
             preprocess=preproc_transforms.get_transform_onnx(640, 640, reverse_channels=True, resize_with_pad=True, backend='cv2', pad_color=[114, 114, 114]),
-            session=onnx_session_type(**sessions.get_onnx_session_cfg(settings, work_dir=work_dir, input_optimization=False, tidl_onnx_model_optimizer={'convert_large_global_avg_pooling_to_matmul':True, 'apply_default_optimizers':True},
+            session=onnx_session_type(**sessions.get_onnx_session_cfg(settings, work_dir=work_dir, input_optimization=False, tidl_onnx_model_optimizer=True,
                                                                       input_mean=(103.53, 116.28, 123.675),
                                                                       input_scale=(0.017429, 0.017507, 0.017125),
                                                                           ),
