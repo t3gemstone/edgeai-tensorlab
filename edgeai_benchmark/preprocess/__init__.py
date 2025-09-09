@@ -223,7 +223,6 @@ class PreProcessTransforms(utils.TransformsCompose):
                                           resize_with_pad=resize_with_pad, pad_color=pad_color)
         return transforms
 
-
     def get_transform_none(self):
         return PreProcessTransforms(self.settings, transforms=[])
 

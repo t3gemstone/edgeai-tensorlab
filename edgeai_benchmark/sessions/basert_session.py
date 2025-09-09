@@ -477,59 +477,105 @@ class BaseRTSession(utils.ParamsBase):
         apply_input_optimization = (self.kwargs['input_optimization'] and self.kwargs['tensor_bits'] == 8 and \
             self.kwargs['input_mean'] is not None and self.kwargs['input_scale'] is not None)
         if model_file0.endswith('.onnx'):
-            if is_new_file:
-                # merge the mean & scale inside the model
-                if apply_input_optimization:
-                    from osrt_model_tools.onnx_tools.tidl_onnx_model_utils import onnx_model_opt as onnxopt
-                    onnxopt.tidlOnnxModelOptimize(model_file0, model_file0, self.kwargs['input_scale'], self.kwargs['input_mean'])
-                #
-                # run onnx simplifier on this model if with_onnxsim is set for this model
-                if self.kwargs['with_onnxsim']:
-                    import onnx
-                    from onnxsim import simplify
-                    onnx_model = onnx.load(model_file0)
-                    onnx_model, check_ok = simplify(onnx_model)
-                    if check_ok:
-                        onnx.save(onnx_model, model_file0)
-                    #
-                #
-                # run onnx shape inference on the model - tidl may thow errors if the onnx model doesn't have shapes
-                # run this only one time - that is what the (not model_file_exists) check does
-                if self.kwargs['shape_inference']:
-                    import onnx
-                    onnx.shape_inference.infer_shapes_path(model_file0, model_file0)
-                #
-                if self.kwargs['tidl_onnx_model_optimizer']:
-                    print("running tidl_onnx_model_optimizer on the model")
-                    from osrt_model_tools.onnx_tools.tidl_onnx_model_optimizer.ops import get_optimizers
-                    from osrt_model_tools.onnx_tools.tidl_onnx_model_optimizer import optimize
-                    optimizers = get_optimizers()
-                    if isinstance(self.kwargs['tidl_onnx_model_optimizer'], dict):
-                        apply_default_optimizers = self.kwargs['tidl_onnx_model_optimizer'].pop('apply_default_optimizers', True)
-                        for key, value in optimizers.items():
-                            optimizers[key] = (apply_default_optimizers and value)
-                        #
-                        for key, value in self.kwargs['tidl_onnx_model_optimizer'].items():
-                            if key in optimizers:
-                                optimizers[key] = value       
+            old_file = model_file0
+            directory, file = os.path.split(old_file)
+            new_file = os.path.join(directory, '_'+file)
+            os.rename(old_file, new_file)
+            model_file0 = new_file
+            try:
+                if is_new_file:
+                    apply_tidl_onnx_model_optimization = True
+                    if not self.kwargs.get('tidl_onnx_model_optimizer', False):
+                        apply_tidl_onnx_model_optimization = False
+                    # merge the mean & scale inside the model
+                    if apply_input_optimization:
+                        if False:
+                            from osrt_model_tools.onnx_tools.tidl_onnx_model_utils import onnx_model_opt as onnxopt
+                            onnxopt.tidlOnnxModelOptimize(model_file0, model_file0, self.kwargs['input_scale'], self.kwargs['input_mean'])
+                        else:
+                            if 'tidl_onnx_model_optimizer' not in self.kwargs:
+                                self.kwargs['tidl_onnx_model_optimizer'] = {}
+                            val = self.kwargs['tidl_onnx_model_optimizer']
+                            if isinstance(val,dict):
+                                val['add_input_normalization'] = {'input_mean': self.kwargs['input_mean'], 'input_scale': self.kwargs['input_scale']}
                             else:
-                                print(f"The given transformation {key} has not been implemented yet.")
-                            #
+                                self.kwargs['tidl_onnx_model_optimizer'] = {}
+                                self.kwargs['tidl_onnx_model_optimizer']['add_input_normalization'] = {'input_mean': self.kwargs['input_mean'], 'input_scale': self.kwargs['input_scale']}
+                    #
+                    # run onnx simplifier on this model if with_onnxsim is set for this model
+                    if self.kwargs['with_onnxsim']:
+                        import onnx
+                        from onnxsim import simplify
+                        onnx_model = onnx.load(model_file0)
+                        onnx_model, check_ok = simplify(onnx_model)
+                        if check_ok:
+                            onnx.save(onnx_model, model_file0)
                         #
-                    #                    
-                    optimize(model = model_file0, out_model = model_file0, custom_optimizers = optimizers)
+                    #
+                    # run onnx shape inference on the model - tidl may thow errors if the onnx model doesn't have shapes
+                    # run this only one time - that is what the (not model_file_exists) check does
+                    if self.kwargs['shape_inference']:
+                        import onnx
+                        onnx.shape_inference.infer_shapes_path(model_file0, model_file0)
+                    #
+                    if self.kwargs['tidl_onnx_model_optimizer']:
+                        print("running tidl_onnx_model_optimizer on the model")
+                        from osrt_model_tools.onnx_tools.tidl_onnx_model_optimizer.ops import get_optimizers
+                        from osrt_model_tools.onnx_tools.tidl_onnx_model_optimizer import optimize
+                        optimizers = get_optimizers()
+                        if isinstance(self.kwargs['tidl_onnx_model_optimizer'], dict):
+                            apply_default_optimizers = self.kwargs['tidl_onnx_model_optimizer'].pop('apply_default_optimizers', True)
+                            for key, value in optimizers.items():
+                                optimizers[key] = (apply_default_optimizers and value and apply_tidl_onnx_model_optimization)
+                            #
+                            for key, value in self.kwargs['tidl_onnx_model_optimizer'].items():
+                                if key in optimizers:
+                                    optimizers[key] = value       
+                                else:
+                                    print(f"The given transformation {key} has not been implemented yet.")
+                                #
+                            #
+                            if optimizers.get('add_input_normalization', False):
+                                add_input_normalization = optimizers['add_input_normalization'] 
+                                if not isinstance(add_input_normalization, dict):
+                                    optimizers['add_input_normalization'] = {}
+                                input_mean = optimizers['add_input_normalization'].get('input_mean', None)
+                                input_scale = optimizers['add_input_normalization'].get('input_scale', None)
+                                
+                                if input_mean is not None and input_mean!=self.kwargs['input_mean']:
+                                    print(f'INFO: Overwriting input_mean in tidl_onnx_model_optimizer(add_input_normalization) with the values from config kwargs if given',)
+                                else:
+                                    print("INFO: input_mean in tidl_onnx_model_optimizer(add_input_normalization) is not set. setting it from config kwargs")
+                                optimizers['add_input_normalization']['input_mean'] = self.kwargs['input_mean'] or input_mean
+                                    
+                                if input_scale is not None and input_scale!=self.kwargs['input_scale']:
+                                    print(f'INFO: Overwriting input_scale in tidl_onnx_model_optimizer(add_input_normalization) with the values from config kwargs if given',)
+                                else:
+                                    print("INFO: input_scale in tidl_onnx_model_optimizer(add_input_normalization) is not set. setting it from config kwargs")
+                                optimizers['add_input_normalization']['input_scale'] = self.kwargs['input_scale'] or input_scale
+                                
+                                apply_input_optimization = optimizers['add_input_normalization']['input_mean'] is not None and \
+                                optimizers['add_input_normalization']['input_scale'] is not None and self.kwargs['tensor_bits'] == 8
+                                optimizers['add_input_normalization'] = add_input_normalization and optimizers['add_input_normalization']
+                        #                    
+                        optimize(model = model_file0, out_model = model_file0, custom_optimizers = optimizers)
+                    #
+                    if self.kwargs['deny_list_from_start_end_node']:
+                        print("Finding the deny list nodes from the given start and end node")
+                        from osrt_model_tools.onnx_tools.tidl_onnx_model_utils import get_all_node_names
+                        deny_list = get_all_node_names(model_file0, self.kwargs['deny_list_from_start_end_node'])
+                        self.kwargs['runtime_options']['deny_list:layer_name'] = deny_list
+                    #
+                    if self.kwargs['output_feature_16bit_names_list_from_start_end']:
+                        output_feature_16bit_names_list = utils.get_all_output_names(model_file0, self.kwargs['output_feature_16bit_names_list_from_start_end'])
+                        self.kwargs['runtime_options']['advanced_options:output_feature_16bit_names_list'] = output_feature_16bit_names_list
+                    #                
                 #
-                if self.kwargs['deny_list_from_start_end_node']:
-                    print("Finding the deny list nodes from the given start and end node")
-                    from osrt_model_tools.onnx_tools.tidl_onnx_model_utils import get_all_node_names
-                    deny_list = get_all_node_names(model_file0, self.kwargs['deny_list_from_start_end_node'])
-                    self.kwargs['runtime_options']['deny_list:layer_name'] = deny_list
-                #
-                if self.kwargs['output_feature_16bit_names_list_from_start_end']:
-                    output_feature_16bit_names_list = utils.get_all_output_names(model_file0, self.kwargs['output_feature_16bit_names_list_from_start_end'])
-                    self.kwargs['runtime_options']['advanced_options:output_feature_16bit_names_list'] = output_feature_16bit_names_list
-                #                
-            #
+                os.rename(new_file, old_file)
+                model_file0 = old_file
+            except Exception as error:
+                os.remove(new_file)
+                raise error
         elif model_file0.endswith('.tflite'):
             if is_new_file:
                 # merge the mean & scale inside the model

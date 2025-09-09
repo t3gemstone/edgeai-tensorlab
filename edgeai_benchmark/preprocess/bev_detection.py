@@ -479,18 +479,22 @@ class BEVSensorsRead():
             # lidar2img transform after resizing and cropping
             lidar2img = np.eye(4)
             lidar2img[:3, :3] = post_intrin
+            post_intrin = np.copy(lidar2img)
             lidar2img = (lidar2img @ lidar2cam).astype(np.float32)
 
             # lidar2img_org before resizing and cropping
             # Needed for visualization
             lidar2img_org = np.eye(4)
             lidar2img_org[:3, :3] = intrin
-            lidar2img_org = (lidar2img_org @ lidar2cam).astype(np.float32)
+            # lidar2img_org = (lidar2img_org @ lidar2cam).astype(np.float32)
 
             # ego2img
             # Needed for visualization of BEVDet
             ego2img = np.eye(4)
             ego2img[:3, :3] = intrin
+            intrin = np.copy(a=lidar2img_org)
+            
+            lidar2img_org = (lidar2img_org @ lidar2cam).astype(np.float32)
             ego2img = (ego2img @ np.linalg.inv(sensor2ego)).astype(np.float32)
 
             intrins.append(intrin)
@@ -511,8 +515,8 @@ class BEVSensorsRead():
         
         # expand array assuming batch_size = 1
         info_dict['num_cams']       = len(data['cams'])
-        info_dict['intrins']        = np.expand_dims(np.stack(intrins), 0)
-        info_dict['post_intrins']   = np.expand_dims(np.stack(post_intrins), 0)
+        info_dict['intrins']        = np.stack(intrins)
+        info_dict['post_intrins']   = np.stack(post_intrins)
         info_dict['sensor2egos']    = np.expand_dims(np.stack(sensor2egos), 0)
         info_dict['ego2globals']    = np.expand_dims(np.stack(ego2globals), 0)
         info_dict['post_rots']      = np.expand_dims(np.stack(post_rots), 0)
@@ -525,6 +529,10 @@ class BEVSensorsRead():
         info_dict['bda']            = np.expand_dims(bda_mat, 0)
         info_dict['pad_shape']      = (self.crop[3], self.crop[2])
         info_dict['lidar2ego']      = np.array(data['lidar2ego'])
+        info_dict['scene_token']    = data['scene_token']
+        info_dict['timestamp']      = data['timestamp']
+        info_dict['img_timestamp']  = [v['timestamp'] for k, v  in data['cams'].items()]
+        info_dict['delta_timestamp']= [info_dict['timestamp'] - v['timestamp'] for k, v  in data['cams'].items()]
         info_dict['scene_token']    = data['scene_token']
         info_dict['timestamp']      = data['timestamp']
         info_dict['img_timestamp']  = [v['timestamp'] for k, v  in data['cams'].items()]
@@ -605,7 +613,7 @@ class GetPETRGeometry():
         self.position_range = [-61.2, -61.2, -10.0, 61.2, 61.2, 10.0]
 
     def add_lidar2img(self, img, meta):
-        """add 'lidar2img' transformation matrix into batch_input_metas.
+        r"""add 'lidar2img' transformation matrix into batch_input_metas.
 
         Args:
             batch_input_metas (list[dict]): Meta information of multiple inputs
