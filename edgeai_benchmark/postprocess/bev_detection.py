@@ -884,11 +884,54 @@ def _is_polygon_valid(position: np.ndarray, img_size: np.ndarray) -> bool:
     Returns:
         bool: Whether the position is in image.
     """
-    flag = (position[..., 0] < img_size[1]).all() and \
-           (position[..., 0] >= 0).all() and \
-           (position[..., 1] < img_size[0]).all() and \
-           (position[..., 1] >= 0).all()
-    return flag
+    valid_bbox = False
+    if img_size is not None:
+    # Filter out the bbox where half of stuff is outside the image.
+    # This is for the visualization of multi-view image.
+        valid_point_idx = (position[..., 0] >= 0) & \
+                (position[..., 0] <= img_size[1]) & \
+                (position[..., 1] >= 0) & (position[..., 1] <= img_size[0])  # noqa: E501
+        valid_bbox = valid_point_idx.sum(axis=-1) > 0
+        # corners_2d = corners_2d[valid_bbox_idx]
+    return valid_bbox
+
+
+def adjust_edge_in_the_img(img_size, corners, depths, i, j):
+    if depths[i] < 1e-5 and depths[j] < 1e-5:
+        return None, None
+    if depths[i] > 1e5 and depths[j] > 1e5:
+        return None, None
+    a = np.copy(corners[i])
+    b = np.copy(corners[j])
+    h, w = img_size
+    if (a[0]<0 and b[0]<0) or (a[0]>w and b[0]>w) or (a[1]<0 and b[1]<0) or (a[1]>h and b[1]>h) : 
+        return  None, None
+    if (a[0]>=0) and (b[0]>=0) and (a[0]<=w) and (b[0]<=w) and (a[1]>=0) and (b[1]>=0) and (a[1]<=h) and (b[1]<=h):
+        a = a.astype(np.int32)
+        b = b.astype(np.int32)
+        return a, b
+    slope = (b[1]-a[1])/(b[0]-a[0])
+    def adjust_point(a):
+        if a[0]< 0:
+            a[1] = slope*(0-a[0])+a[1] 
+            a[0] = 0
+        if a[0] > w:
+            a[1] = slope*(w-a[0])+a[1]
+            a[0] = w 
+        if a[1] < 0:
+            a[0] = (0-a[1])/slope + a[0]
+            a[1] = 0
+        if a[1] > h:
+            a[0] = (h-a[1])/slope + a[0]
+            a[1] = h
+    adjust_point(a), adjust_point(b)
+    a = a.astype(np.int32)
+    b = b.astype(np.int32)
+    
+    if (a[0]<=0 and b[0]<=0) or (a[0]>=w and b[0]>=w) or (a[1]<=0 and b[1]<=0) or (a[1]>=h and b[1]>=h) : 
+        return  None, None
+    return  a, b
+    
 
 def points_img2cam(points, cam2img):
     """Project points in image coordinates to camera coordinates.
@@ -1131,13 +1174,20 @@ def proj_lidar_bbox3d_to_img(corners_3d, single_lidar2img):
         np.ones((num_bbox * 8, 1))], axis=-1)
     lidar2img = copy.deepcopy(single_lidar2img).reshape(4, 4)
     pts_2d = pts_4d @ lidar2img.T
-
+    
+    valid_box_idx = np.logical_and(pts_2d[:, 2]>=1e-5, pts_2d[:, 2]<=1e5)
+    valid_box_idx = valid_box_idx.reshape(-1,8)
+    valid_box_idx = np.where(valid_box_idx.sum(-1)>0)[0]
+    pts_2d = pts_2d.reshape(-1,8,4)
+    pts_2d = pts_2d[valid_box_idx]
+    num_bbox = pts_2d.shape[0]
+    pts_2d = pts_2d.reshape(-1,4)
     pts_2d[:, 2] = np.clip(pts_2d[:, 2], a_min=1e-5, a_max=1e5)
     pts_2d[:, 0] /= pts_2d[:, 2]
     pts_2d[:, 1] /= pts_2d[:, 2]
-    imgfov_pts_2d = pts_2d[..., :2].reshape(num_bbox, 8, 2)
+    imgfov_pts_2d, depths = pts_2d[..., :2].reshape(num_bbox, 8, 2), pts_2d[...,2].reshape(num_bbox, 8)
 
-    return imgfov_pts_2d
+    return imgfov_pts_2d, depths, valid_box_idx
 
 
 # BBoxes regresssion (post-processing) class for BEVDet
@@ -2069,6 +2119,10 @@ class BEVImageSave():
         bboxes_3d = detections['bboxes_3d']
         scores_3d = detections['scores_3d']
         labels_3d = detections['labels_3d']
+        
+        run_dir = info_dict['run_dir']
+        save_dir = os.path.join(run_dir, 'outputs')
+        os.makedirs(save_dir, exist_ok=True)
 
         bboxes_3d = bboxes_3d[scores_3d > self.score_threshold]
         labels_3d = labels_3d[scores_3d > self.score_threshold].astype(np.int32)
@@ -2087,6 +2141,7 @@ class BEVImageSave():
             corners_3d = get_camera_box_corners_3d(bboxes_3d)
             num_bbox   = corners_3d.shape[0]
             points_3d  = corners_3d.reshape(-1, 3)
+            depths_3d = corners_3d[..., 2].reshape(-1, 8)
 
             # proj_camera_bbox3d_to_img
             cam2img = info_dict['intrins']
@@ -2094,31 +2149,19 @@ class BEVImageSave():
             uv_origin = (uv_origin - 1).round()
             corners_2d = uv_origin[..., :2].reshape(num_bbox, 8, 2)
 
-            if img_size is not None:
-                # Filter out the bbox where half of stuff is outside the image.
-                # This is for the visualization of multi-view image.
-                valid_point_idx = (corners_2d[..., 0] >= 0) & \
-                            (corners_2d[..., 0] <= img_size[1]) & \
-                            (corners_2d[..., 1] >= 0) & (corners_2d[..., 1] <= img_size[0])  # noqa: E501
-                valid_bbox_idx = valid_point_idx.sum(axis=-1) >= 4
-                corners_2d = corners_2d[valid_bbox_idx]
 
             for idx, corners in enumerate(corners_2d):
                 if _is_polygon_valid(corners, img_size):
-                    corners = corners.astype(np.int32)
-                    cv2.line(img, tuple(corners[0]), tuple(corners[1]), self.bbox_color[labels_3d[idx]], self.thickness)
-                    cv2.line(img, tuple(corners[1]), tuple(corners[2]), self.bbox_color[labels_3d[idx]], self.thickness)
-                    cv2.line(img, tuple(corners[2]), tuple(corners[3]), self.bbox_color[labels_3d[idx]], self.thickness)
-                    cv2.line(img, tuple(corners[3]), tuple(corners[0]), self.bbox_color[labels_3d[idx]], self.thickness)
-                    cv2.line(img, tuple(corners[4]), tuple(corners[5]), self.bbox_color[labels_3d[idx]], self.thickness)
-                    cv2.line(img, tuple(corners[5]), tuple(corners[6]), self.bbox_color[labels_3d[idx]], self.thickness)
-                    cv2.line(img, tuple(corners[6]), tuple(corners[7]), self.bbox_color[labels_3d[idx]], self.thickness)
-                    cv2.line(img, tuple(corners[7]), tuple(corners[4]), self.bbox_color[labels_3d[idx]], self.thickness)
-                    cv2.line(img, tuple(corners[0]), tuple(corners[4]), self.bbox_color[labels_3d[idx]], self.thickness)
-                    cv2.line(img, tuple(corners[1]), tuple(corners[5]), self.bbox_color[labels_3d[idx]], self.thickness)
-                    cv2.line(img, tuple(corners[2]), tuple(corners[6]), self.bbox_color[labels_3d[idx]], self.thickness)
-                    cv2.line(img, tuple(corners[3]), tuple(corners[7]), self.bbox_color[labels_3d[idx]], self.thickness)
-
+                    depths = depths_3d[idx]
+                    edges = (
+                        (0,1),(1,2),(2,3),(3,0),
+                        (4,5),(5,6),(6,7),(7,4),
+                        (0,4),(1,5),(2,6),(3,7)
+                    )
+                    for a,b in edges:
+                        a,b = adjust_edge_in_the_img(img_size, corners, depths, a, b , )
+                        if a is not None:
+                            cv2.line(img, tuple(a), tuple(b), self.bbox_color[labels_3d[idx]], self.thickness)
             save_path = os.path.join(save_dir, 'output_frame-{:04d}.png'.format(self.output_frame_idx))
             cv2.imwrite(save_path, img)
 
@@ -2129,10 +2172,6 @@ class BEVImageSave():
                 imgs.append(cv2.cvtColor(img, cv2.COLOR_BGRA2BGR))
 
             img_size = info_dict['data_shape'][0:2]
-
-            run_dir = info_dict['run_dir']
-            save_dir = os.path.join(run_dir, 'outputs')
-            os.makedirs(save_dir, exist_ok=True)
 
             corners_3d = get_lidar_box_corners_3d(bboxes_3d)
             if info_dict['task_name'] == 'BEVDet':
@@ -2154,31 +2193,21 @@ class BEVImageSave():
                 trans2img = trans2imgs[i]
                 corners_2d = proj_lidar_bbox3d_to_img(corners_3d, trans2img)
 
-                if img_size is not None:
-                    # Filter out the bbox where half of stuff is outside the image.
-                    # This is for the visualization of multi-view image.
-                    valid_point_idx = (corners_2d[..., 0] >= 0) & \
-                                (corners_2d[..., 0] <= img_size[1]) & \
-                                (corners_2d[..., 1] >= 0) & (corners_2d[..., 1] <= img_size[0])  # noqa: E501
-                    valid_bbox_idx = valid_point_idx.sum(axis=-1) >= 4
-                    corners_2d = corners_2d[valid_bbox_idx]
+                corners_2d , depths_2d, valid_bbox_idx= proj_lidar_bbox3d_to_img(corners_3d, trans2img)
+                labels = labels_3d[valid_bbox_idx]
 
                 for idx, corners in enumerate(corners_2d):
                     if _is_polygon_valid(corners, img_size):
-                        corners = corners.astype(np.int32)
-                        cv2.line(single_img, tuple(corners[0]), tuple(corners[1]), self.bbox_color[labels_3d[idx]], self.thickness)
-                        cv2.line(single_img, tuple(corners[1]), tuple(corners[2]), self.bbox_color[labels_3d[idx]], self.thickness)
-                        cv2.line(single_img, tuple(corners[2]), tuple(corners[3]), self.bbox_color[labels_3d[idx]], self.thickness)
-                        cv2.line(single_img, tuple(corners[3]), tuple(corners[0]), self.bbox_color[labels_3d[idx]], self.thickness)
-                        cv2.line(single_img, tuple(corners[4]), tuple(corners[5]), self.bbox_color[labels_3d[idx]], self.thickness)
-                        cv2.line(single_img, tuple(corners[5]), tuple(corners[6]), self.bbox_color[labels_3d[idx]], self.thickness)
-                        cv2.line(single_img, tuple(corners[6]), tuple(corners[7]), self.bbox_color[labels_3d[idx]], self.thickness)
-                        cv2.line(single_img, tuple(corners[7]), tuple(corners[4]), self.bbox_color[labels_3d[idx]], self.thickness)
-                        cv2.line(single_img, tuple(corners[0]), tuple(corners[4]), self.bbox_color[labels_3d[idx]], self.thickness)
-                        cv2.line(single_img, tuple(corners[1]), tuple(corners[5]), self.bbox_color[labels_3d[idx]], self.thickness)
-                        cv2.line(single_img, tuple(corners[2]), tuple(corners[6]), self.bbox_color[labels_3d[idx]], self.thickness)
-                        cv2.line(single_img, tuple(corners[3]), tuple(corners[7]), self.bbox_color[labels_3d[idx]], self.thickness)
-
+                        depths = depths_2d[i]
+                        edges = (
+                            (0,1),(1,2),(2,3),(3,0),
+                            (4,5),(5,6),(6,7),(7,4),
+                            (0,4),(1,5),(2,6),(3,7)
+                        )
+                        for a,b in edges:
+                            a,b = adjust_edge_in_the_img(img_size, corners, depths, a, b , )
+                            if a is not None:
+                                cv2.line(single_img, tuple(a), tuple(b), self.bbox_color[labels[idx]], self.thickness)
                 save_path = os.path.join(save_dir, 'output_frame-{:04d}_{}.png'.format(self.output_frame_idx, i))
                 cv2.imwrite(save_path, single_img)
 
