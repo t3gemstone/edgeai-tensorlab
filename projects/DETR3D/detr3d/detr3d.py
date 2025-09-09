@@ -10,7 +10,7 @@ from mmdet3d.structures import Det3DDataSample
 from mmdet3d.structures.bbox_3d.utils import get_lidar2img
 from .grid_mask import GridMask
 
-from mmdet3d.models.detectors.onnx_export import export_DETR3D
+from .onnx_export import export_DETR3D
 
 @MODELS.register_module()
 class DETR3D(MVXTwoStageDetector):
