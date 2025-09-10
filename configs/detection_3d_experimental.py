@@ -171,7 +171,7 @@ def get_configs(settings, work_dir):
                 runtime_options=utils.dict_update(settings.runtime_options_onnx_p2(bev_options={'bev_options:num_temporal_frames': 1}),
                     {'advanced_options:output_feature_16bit_names_list':''},
                     {'advanced_options:max_num_subgraph_nodes':300}),
-                model_path=f'../edgeai-modelforest/models-cl/vision/detection_3d/nuscenes/petrv2/optimized_petrv2_mod_vovnet_320x800_20250612.onnx'), #TODO Correct Model Paths
+                model_path=f'../edgeai-modelforest/models-cl/vision/detection_3d/nuscenes/petrv2/petrv2_mod_vovnet_320x800_20250519.onnx'),
             postprocess=postproc_transforms.get_transform_bev_detection_base(),
             metric=dict(),
             model_info=dict(metric_reference={'mAP':0.4})
@@ -214,7 +214,7 @@ def get_configs(settings, work_dir):
                 runtime_options=utils.dict_update(settings.runtime_options_onnx_p2( ext_options={'onnxruntime:graph_optimization_level': ORT_DISABLE_ALL,
                                 'object_detection:meta_arch_type': 10,
                                 'object_detection:meta_layers_names_list':
-                                '../edgeai-modelzoo/models/vision/detection_3d/pandaset/mmdet3d/bevformer/bevformer_tiny_mod_metaarch.prototxt'}),#TODO Correct the path
+                                '../edgeai-modelzoo/models/vision/detection_3d/pandaset/mmdet3d/bevformer/bevformer_tiny_mod_metaarch.prototxt'}),
                     {'advanced_options:output_feature_16bit_names_list':'','advanced_options:max_num_subgraph_nodes': 1536}),
                 model_path=f'../edgeai-modelzoo/models/vision/detection_3d/pandaset/mmdet3d/bevformer/bevformer_tiny_mod_pandaset_544x960_20250602_opt.onnx'),
             postprocess=postproc_transforms.get_transform_bev_detection_base(),
