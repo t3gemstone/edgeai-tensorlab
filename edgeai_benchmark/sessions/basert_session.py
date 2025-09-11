@@ -544,13 +544,13 @@ class BaseRTSession(utils.ParamsBase):
                                 
                                 if input_mean is not None and input_mean!=self.kwargs['input_mean']:
                                     print(f'INFO: Overwriting input_mean in tidl_onnx_model_optimizer(add_input_normalization) with the values from config kwargs if given',)
-                                else:
+                                elif input_mean is None:
                                     print("INFO: input_mean in tidl_onnx_model_optimizer(add_input_normalization) is not set. setting it from config kwargs")
                                 optimizers['add_input_normalization']['input_mean'] = self.kwargs['input_mean'] or input_mean
                                     
                                 if input_scale is not None and input_scale!=self.kwargs['input_scale']:
                                     print(f'INFO: Overwriting input_scale in tidl_onnx_model_optimizer(add_input_normalization) with the values from config kwargs if given',)
-                                else:
+                                elif input_scale is None:
                                     print("INFO: input_scale in tidl_onnx_model_optimizer(add_input_normalization) is not set. setting it from config kwargs")
                                 optimizers['add_input_normalization']['input_scale'] = self.kwargs['input_scale'] or input_scale
                                 
