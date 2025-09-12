@@ -30,12 +30,11 @@ import numpy as np
 from edgeai_benchmark import constants, utils, datasets, preprocess, sessions, postprocess, metrics
 
 
-# for transformer models we need to set graph_optimization_level = ORT_DISABLE_ALL for onnxruntime
-from onnxruntime import GraphOptimizationLevel
-ORT_DISABLE_ALL = GraphOptimizationLevel.ORT_DISABLE_ALL
-
-
 def get_configs(settings, work_dir):
+    # for transformer models we need to set graph_optimization_level = ORT_DISABLE_ALL for onnxruntime
+    import onnxruntime
+    ORT_DISABLE_ALL = onnxruntime.GraphOptimizationLevel.ORT_DISABLE_ALL
+
     # get the sessions types to use for each model type
     onnx_session_type = settings.get_session_type(constants.MODEL_TYPE_ONNX)
     tflite_session_type = settings.get_session_type(constants.MODEL_TYPE_TFLITE)
