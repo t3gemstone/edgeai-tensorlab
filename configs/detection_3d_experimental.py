@@ -69,6 +69,19 @@ def get_configs(settings, work_dir):
         'calibration_dataset': settings.dataset_cache[datasets.DATASET_CATEGORY_NUSCENES_MV_IMAGE]['calibration_dataset'],
         'input_dataset': settings.dataset_cache[datasets.DATASET_CATEGORY_NUSCENES_MV_IMAGE]['input_dataset'],
     }
+    bev_frame_cfg_ps = {
+        'task_type': 'bev_detection',
+        'dataset_category': datasets.DATASET_CATEGORY_PANDASET_FRAME,
+        'calibration_dataset': settings.dataset_cache[datasets.DATASET_CATEGORY_PANDASET_FRAME]['calibration_dataset'],
+        'input_dataset': settings.dataset_cache[datasets.DATASET_CATEGORY_PANDASET_FRAME]['input_dataset'],
+    }
+
+    bev_mv_image_cfg_ps = {
+        'task_type': 'bev_detection',
+        'dataset_category': datasets.DATASET_CATEGORY_PANDASET_MV_IMAGE,
+        'calibration_dataset': settings.dataset_cache[datasets.DATASET_CATEGORY_PANDASET_MV_IMAGE]['calibration_dataset'],
+        'input_dataset': settings.dataset_cache[datasets.DATASET_CATEGORY_PANDASET_MV_IMAGE]['input_dataset'],
+    }
 
     # to define the names of first and last layer for 16 bit conversion
     first_last_layer_3dod_7100 = ''
@@ -144,6 +157,25 @@ def get_configs(settings, work_dir):
             metric=dict(),
             model_info=dict(metric_reference={'mAP':0.4})
         ),
+        #TODO Details like denylist and prototxt aren't fixed yet
+        # 3dod-7125: petrv2 
+        '3dod-7125':utils.dict_update(bev_frame_cfg,
+            task_name='PETRv2',
+            # crop = (left, top, width, height)
+            preprocess=preproc_transforms.get_transform_bev_petr((900, 1600), (450, 800), (0, 130, 800, 320), featsize=(20, 50), backend='cv2', interpolation=cv2.INTER_CUBIC),
+            # Check RGB vs BGR
+            session=onnx_session_type(**sessions.get_onnx_session_cfg(settings, work_dir=work_dir, input_mean=[(103.530, 116.280, 123.675)], input_scale=[(0.017429, 0.017507, 0.017125)], input_optimization=False,
+                                                                        deny_list_from_start_end_node = {'/pts_bbox_head/Concat_129':None,
+                                                                                                         '/pts_bbox_head/Concat_130':None,
+                                                                                                         '/pts_bbox_head/transformer/Transpose_2':'/pts_bbox_head/transformer/Transpose_2',}),
+                runtime_options=utils.dict_update(settings.runtime_options_onnx_p2(bev_options={'bev_options:num_temporal_frames': 1}),
+                    {'advanced_options:output_feature_16bit_names_list':''},
+                    {'advanced_options:max_num_subgraph_nodes':300}),
+                model_path=f'../edgeai-modelforest/models-cl/vision/detection_3d/nuscenes/petrv2/petrv2_mod_vovnet_320x800_20250519.onnx'),
+            postprocess=postproc_transforms.get_transform_bev_detection_base(),
+            metric=dict(),
+            model_info=dict(metric_reference={'mAP':0.4})
+        ),
         # 3dod-7130: BEVDet
         '3dod-7130':utils.dict_update(bev_frame_cfg,
             task_name='BEVDet',
@@ -173,6 +205,22 @@ def get_configs(settings, work_dir):
             metric=dict(),
             model_info=dict(metric_reference={'mAP':0.4})
         ),
+        # 3dod-7141: BEVFormer for pandaset
+        '3dod-7141':utils.dict_update(bev_frame_cfg_ps,
+            task_name='BEVFormer',
+            # pad = (left, top, right, bottom) = (0, 0, 0, 30)
+            preprocess=preproc_transforms.get_transform_bev_bevformer((1080, 1920), (540, 960), (0, 0, 0, 4), backend='cv2', interpolation=cv2.INTER_CUBIC),
+            session=onnx_session_type(**sessions.get_onnx_session_cfg(settings, work_dir=work_dir, input_mean=[(123.675, 116.280, 103.530)], input_scale=[(0.017125, 0.017507, 0.017429)], input_optimization=False),
+                runtime_options=utils.dict_update(settings.runtime_options_onnx_p2( ext_options={'onnxruntime:graph_optimization_level': ORT_DISABLE_ALL,
+                                'object_detection:meta_arch_type': 10,
+                                'object_detection:meta_layers_names_list':
+                                '../edgeai-modelzoo/models/vision/detection_3d/pandaset/mmdet3d/bevformer/bevformer_tiny_mod_metaarch.prototxt'}),
+                    {'advanced_options:output_feature_16bit_names_list':'','advanced_options:max_num_subgraph_nodes': 1536}),
+                model_path=f'../edgeai-modelzoo/models/vision/detection_3d/pandaset/mmdet3d/bevformer/bevformer_tiny_mod_pandaset_544x960_20250602_opt.onnx'),
+            postprocess=postproc_transforms.get_transform_bev_detection_base(),
+            metric=dict(),
+            model_info=dict(metric_reference={'mAP':0.4})
+        ),
         # 3dod-7150: FCOS3D (bev_mv_image_cfg)
         '3dod-7150':utils.dict_update(bev_mv_image_cfg,
             task_name='FCOS3D',
@@ -191,7 +239,8 @@ def get_configs(settings, work_dir):
             task_name='FastBEV_f1',
             # crop = (left, top, width, height)
             preprocess=preproc_transforms.get_transform_bev_fastbev((900, 1600), (396, 704), (0, 70, 704, 256), backend='cv2', interpolation=cv2.INTER_CUBIC),
-            session=onnx_session_type(**sessions.get_onnx_session_cfg(settings, work_dir=work_dir, input_mean=[(123.675, 116.280, 103.530)], input_scale=[(0.017125, 0.017507, 0.017429)], input_optimization=False,
+            session=onnx_session_type(**sessions.get_onnx_session_cfg(settings, work_dir=work_dir, input_mean=[(123.675, 116.280, 103.530)], 
+                                                                      input_scale=[(0.017125, 0.017507, 0.017429)], input_optimization=True,
                                                                         deny_list_from_start_end_node = {'/TopK':None,
                                                                                                          '/Concat_20':'/Concat_20',
                                                                                                          '/Gather_9':'/Gather_9',}),
@@ -211,7 +260,7 @@ def get_configs(settings, work_dir):
             # crop = (left, top, width, height)
             preprocess=preproc_transforms.get_transform_bev_fastbev((900, 1600), (396, 704), (0, 70, 704, 256), backend='cv2', interpolation=cv2.INTER_CUBIC),
             session=onnx_session_type(**sessions.get_onnx_session_cfg(settings, work_dir=work_dir, input_mean=[(123.675, 116.280, 103.530)], 
-                                                                      input_scale=[(0.017125, 0.017507, 0.017429)], input_optimization=False,
+                                                                      input_scale=[(0.017125, 0.017507, 0.017429)], input_optimization=True,
                                                                       deny_list_from_start_end_node = {}),
                 runtime_options=utils.dict_update(settings.runtime_options_onnx_p2(bev_options={'bev_options:num_temporal_frames': 0},
                     ext_options={'object_detection:meta_arch_type': 7,
@@ -228,7 +277,8 @@ def get_configs(settings, work_dir):
             task_name='FastBEV_f4',
             # crop = (left, top, width, height)
             preprocess=preproc_transforms.get_transform_bev_fastbev((900, 1600), (396, 704), (0, 70, 704, 256), backend='cv2', interpolation=cv2.INTER_CUBIC),
-            session=onnx_session_type(**sessions.get_onnx_session_cfg(settings, work_dir=work_dir, input_mean=[(123.675, 116.280, 103.530)], input_scale=[(0.017125, 0.017507, 0.017429)], input_optimization=False,
+            session=onnx_session_type(**sessions.get_onnx_session_cfg(settings, work_dir=work_dir, input_mean=[(123.675, 116.280, 103.530)], 
+                                                                      input_scale=[(0.017125, 0.017507, 0.017429)], input_optimization=True,
                                                                         deny_list_from_start_end_node = {'/TopK':None,
                                                                                                          '/Gather_2':'/Gather_2',
                                                                                                          '/Gather_6':'/Gather_6',
@@ -252,7 +302,8 @@ def get_configs(settings, work_dir):
             task_name='FastBEV_f4',
             # crop = (left, top, width, height)
             preprocess=preproc_transforms.get_transform_bev_fastbev((900, 1600), (396, 704), (0, 70, 704, 256), backend='cv2', interpolation=cv2.INTER_CUBIC),
-            session=onnx_session_type(**sessions.get_onnx_session_cfg(settings, work_dir=work_dir, input_mean=[(123.675, 116.280, 103.530)], input_scale=[(0.017125, 0.017507, 0.017429)], input_optimization=False,
+            session=onnx_session_type(**sessions.get_onnx_session_cfg(settings, work_dir=work_dir, input_mean=[(123.675, 116.280, 103.530)], 
+                                                                      input_scale=[(0.017125, 0.017507, 0.017429)], input_optimization=True,
                                                                         deny_list_from_start_end_node = {}),
                 runtime_options=utils.dict_update(settings.runtime_options_onnx_p2(bev_options={'bev_options:num_temporal_frames': 3},
                     ext_options={'object_detection:meta_arch_type': 7,
