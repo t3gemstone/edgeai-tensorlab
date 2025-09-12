@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-# Copyright (c) 2018-2021, Texas Instruments
+# Copyright (c) 2018-2025, Texas Instruments
 # All Rights Reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -28,15 +28,11 @@
 # OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-########################################################
-# Install tidl-tools built with gpu support - needs nvidia-hpc-sdk to be installed in system to run
-echo "Installing tidl-tools with CUDA GPU support and NVIDIA-HPC-SDK..."
-echo "Please ensure that you have NVIDIA CUDA GPUs and that the GPU drivers are installed."
 
-echo "Installing tidl-tools with CUDA GPU support..."
-TIDL_TOOLS_TYPE="gpu" ./setup_pc.sh "$@"
+######################################################################
+TIDL_TOOLS_TYPE="gpu" ./setup_pc.sh
 
-########################################################
+######################################################################
 # NVIDIA-HPC-SDK
 NVIDIA_HPC_SDK_VERSION="23.7"
 NVIDIA_HPC_SDK_PATH="/opt/nvidia/hpc_sdk/Linux_x86_64/${NVIDIA_HPC_SDK_VERSION}"
@@ -71,3 +67,6 @@ echo "  sudo apt-get install -y nvidia-kernel-open-550"
 echo "  sudo apt-get install -y cuda-drivers-550"
 echo "============================================================"
 
+
+#######################################################################
+echo 'Completed installation.'

@@ -1,3 +1,4 @@
+# tidl-tools-package
 
-This is a just a placeholder folder. tidl_tools will be downloaded in the appropriate tidl_tools_package folder during setup.
+This packages the tidl_tools from [edgeai-tidl-tools](https://github.com/TexasInstruments/edgeai-tidl-tools) for various SoCs into one convenient location. For more details on tidl-tools, please see: [edgeai-tidl-tools](https://github.com/TexasInstruments/edgeai-tidl-tools)
 

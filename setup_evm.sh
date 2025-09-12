@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-# Copyright (c) 2018-2021, Texas Instruments
+# Copyright (c) 2018-2025, Texas Instruments
 # All Rights Reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -28,13 +28,9 @@
 # OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-######################################################################
-pip3 install --no-input -r ./requirements/requirements_evm.txt
 
 ######################################################################
-echo "--------------------------------------------------------------------------------------------------------------"
-echo 'Installing local module using setup.py...'
-echo "--------------------------------------------------------------------------------------------------------------"
-python3 setup.py develop
+pip3 install -e ./[evm]
 
+#######################################################################
 echo 'Completed installation.'
