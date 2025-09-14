@@ -1,27 +1,27 @@
-# PETR: Position Embedding Transformation for Multi-View 3D Object Detection
+# Exploring Object-Centric Temporal Modeling for Efficient Multi-View 3D Object Detection
 
-> [PETR: Position Embedding Transformation for Multi-View 3D Object Detection](https://arxiv.org/abs/2203.05625)
-
-<!-- [ALGORITHM] -->
-
-## Abstract
-
-In this paper, we develop position embedding transformation (PETR) for multi-view 3D object detection. PETR encodes the position information of 3D coordinates into image features, producing the 3D position-aware features. Object query can perceive the 3D position-aware features and perform end-to-end object detection. PETR achieves state-of-the-art performance (50.4% NDS and 44.1% mAP) on standard nuScenes dataset and ranks 1st place on the benchmark. It can serve as a simple yet strong baseline for future research. Code is available at [this URL](https://github.com/megvii-research/PETR).
-
-# PETRv2: A Unified Framework for 3D Perception from Multi-Camera Images
-
-> [PETRv2: A Unified Framework for 3D Perception from Multi-Camera Images](https://arxiv.org/abs/2206.01256)
+> [Exploring Object-Centric Temporal Modeling for Efficient Multi-View 3D Object Detection](https://arxiv.org/abs/2303.11926)
 
 <!-- [ALGORITHM] -->
 
 ## Abstract
 
-In this paper, we propose PETRv2, a unified framework for 3D perception from multi-view images. Based on PETR, PETRv2 explores the effectiveness of temporal modeling, which utilizes the temporal information of previous frames to boost 3D object detection. More specifically, we extend the 3D position embedding (3D PE) in PETR for temporal modeling. The 3D PE achieves the temporal alignment on object position of different frames. A feature-guided position encoder is further introduced to improve the data adaptability of 3D PE. To support for multi-task learning (e.g., BEV segmentation and 3D lane detection), PETRv2 provides a simple yet effective solution by introducing task-specific queries, which are initialized under different spaces. PETRv2 achieves state-of-the-art performance on 3D object detection, BEV segmentation and 3D lane detection. Detailed robustness analysis is also conducted on PETR framework. We hope PETRv2 can serve as a strong baseline for 3D perception. Code is available at [this URL](https://github.com/megvii-research/PETR). 
+In this paper, we propose a long-sequence modeling framework, named StreamPETR, for multi-view 3D object detection. Built upon the sparse query design in the PETR series, we systematically develop an object-centric temporal mechanism. The model is performed in an online manner and the long-term historical information is propagated through object queries frame by frame. Besides, we introduce a motion-aware layer normalization to model the movement of the objects. StreamPETR achieves significant performance improvements only with negligible computation cost, compared to the single-frame baseline. On the standard nuScenes benchmark, it is the first online multi-view method that achieves comparable performance (67.6% NDS & 65.3% AMOTA) with lidar-based methods. The lightweight version realizes 45.0% mAP and 31.7 FPS, outperforming the state-of-the-art method (SOLOFusion) by 2.3% mAP and 1.8x faster FPS. Code has been available at [this URL](https://github.com/exiawsh/StreamPETR).
+
+# Far3D: Expanding the Horizon for Surround-view 3D Object Detection
+
+> [Far3D: Expanding the Horizon for Surround-view 3D Object Detection](https://arxiv.org/abs/2308.09616)
+
+<!-- [ALGORITHM] -->
+
+## Abstract
+
+Recently 3D object detection from surround-view images has made notable advancements with its low deployment cost. However, most works have primarily focused on close perception range while leaving long-range detection less explored. Expanding existing methods directly to cover long distances poses challenges such as heavy computation costs and unstable convergence. To address these limitations, this paper proposes a novel sparse query-based framework, dubbed Far3D. By utilizing high-quality 2D object priors, we generate 3D adaptive queries that complement the 3D global queries. To efficiently capture discriminative features across different views and scales for long-range objects, we introduce a perspective-aware aggregation module. Additionally, we propose a range-modulated 3D denoising approach to address query error propagation and mitigate convergence issues in long-range tasks. Significantly, Far3D demonstrates SoTA performance on the challenging Argoverse 2 dataset, covering a wide range of 150 meters, surpassing several LiDAR-based approaches. Meanwhile, Far3D exhibits superior performance compared to previous methods on the nuScenes dataset. The code is available at [this URL](https://github.com/megvii-research/Far3D). 
 
 
 ## Introduction
 
-We implement and provide the results and checkpoints for PETR and PETRv2 on the NuScenes dataset. <!--  The result can be found in [Object Detection Zoo](../../docs/det3d_modelzoo.md) -->
+We implement and provide the results and checkpoints for StreamPETR and Far3D on the NuScenes dataset.
 
 ## Dataset Preperation
 
@@ -29,17 +29,10 @@ We implement and provide the results and checkpoints for PETR and PETRv2 on the 
 
 Prepare the nuScenes dataset as per the MMDetection3D documentation [NuScenes Dataset Preperation](../../docs/en/advanced_guides/datasets/nuscenes.md). 
 
-After downloading nuScenes 3D detection dataset and unzipping all zip files, we typically need to organize the useful data information with a `.pkl` file in a specific style.
-To prepare these files for nuScenes, run the following command:
+After downloading nuScenes 3D detection dataset and unzipping all zip files, we typically need to organize the useful data information with a `.pkl` file in a specific style. To prepare them with NuScenes dataset for StreamPETR and Far3D, run the following command:
 
 ```bash
-python tools/create_data.py nuscenes --root-path ./data/nuscenes --out-dir ./data/nuscenes --extra-tag nuscenes
-```
-
-This command creates `.pkl` files for PETR, BEVFormer and FCOS3D. To include additional data fields for BEVDet and PETRv2, we should add `--bevdet` and `--petrv2`, respectively, to the command. For example,
-
-```bash
-python tools/create_data.py nuscenes --root-path ./data/nuscenes --out-dir ./data/nuscenes --extra-tag nuscenes --bevdet --petrv2
+python tools/create_data.py nuscenes --root-path ./data/nuscenes --out-dir ./data/nuscenes --extra-tag nuscenes --strpetr
 ```
 
 The directory structure after processing should be as below.
@@ -66,35 +59,7 @@ edgeai-mmdetection3d
 
 ### PandaSet
 
-Download `pandaset.zip` from [HERE](https://huggingface.co/datasets/georghess/pandaset/tree/main) and unzip the file in `./data/pandaset`. Then run the following command to prepare `.pkl` files:
-
-```bash
-python tools/create_data.py pandaset --root-path ./data/pandaset --out-dir ./data/pandaset --extra-tag pandaset
-```
-
-The directory structure after processing should look like:
-
-```
-edgeai-mmdetection3d
-├── mmdet3d
-├── tools
-├── configs
-├── data
-│   ├── pandaset
-│   │   ├── 001
-│   │   │   ├── annotations
-│   │   │   ├── camera
-│   │   │   ├── LICENSE.txt
-│   │   │   ├── lidar
-│   │   │   └── meta
-│   │   ├── 002 
-.   .   .
-.   .   .
-.   .   .
-│   │   ├── 158
-│   │   ├── pandaset_infos_train.pkl
-│   │   ├── pandaset_infos_val.pkl
-```
+StreamPETR and Far3D are not supported yet in edgeai-mmdetection3d. 
 
 ## Get Started
 
@@ -106,12 +71,13 @@ Refer the MMDetection3D documentation [Test and Train with Standard Datasets](..
     "./tools/dist_train.sh <config_file> <num_gpus>"
 
     For example, to use 2 GPUs use the command
-    ```bash
-    # NuScenes
-    ./tools/dist_train.sh projects/PETR/configs/petr_vovnet_gridmask_p4_800x320.py 2
 
-    # PandaSet
-    ./tools/dist_train.sh projects/PETR/configs/petr_pandaset_vovnet_gridmask_p4_960x352.py 2
+    ```bash
+    # StreamPETR with NuScenes
+    ./tools/dist_train.sh projects_edgeai/Far3D/configs/nuscenes/streampetr_r50_256x704_bs4_seq_24e.py 2
+
+    # Far3D with NuScenes
+    ./tools/dist_train.sh projects_edgeai/Far3D/configs/nuscenes/far3d_vovnet_gridmask_960x640.py 2
     ```
 
 3.  Do evalution using the command 
@@ -121,25 +87,23 @@ Refer the MMDetection3D documentation [Test and Train with Standard Datasets](..
     For example,
 
     ```bash
-    # NuScenes
-    python ./tools/test.py projects/PETR/configs/petr_vovnet_gridmask_p4_800x320.py ./work_dirs/petr_vovnet_gridmask_p4_800x320/epoch_24.pth
+    # StreamPETR with NuScenes
+    python ./tools/test.py projects_edgeai/StreamPETR/configs/nuscenes/streampetr_r50_256x704_bs4_seq_24e.py ./work_dirs/streampetr_r50_256x704_bs4_seq_24e/epoch_24.pth
 
-    # PandaSet
-    python ./tools/test.py projects/PETR/configs/petr_pandaset_vovnet_gridmask_p4_960x352.py ./work_dirs/petr_pandaset_vovnet_gridmask_p4_960x352/epoch_24.pth
+    # Far3D with NuScenes
+    python ./tools/test.py projects_edgeai/Far3D/configs/nuscenes/far3d_vovnet_gridmask_960x640.py ./work_dirs/far3d_vovnet_gridmask_960x640/epoch_24.pth
     ```
     Note: This is single GPU evalution command. "./dist_test.sh" can be used for multiple GPU evalution process.
 
 ## Results
 
-The following results are for PETR and PETRv2 with NuScenes and PandaSet, respectively. PETRv2 with PandaSet is not avaiable yet.
+The following results are for StreamPETR and Far#D with NuScenes.
 
 
 |  Dataset  |                    Model                      | Mem (GB) | Inf time (fps) | mAP    | NDS   |
 |:---------:| :-------------------------------------------- | :------: | :------------: | :---:  | :--:  |
-| NuScenes  | petr_vovnet_gridmask_p4_800x320               |   1.09   |       TBA      | 37.83  | 43.11 |
-|           | petrv2_vovnet_gridmask_p4_800x320             |   1.87   |       TBA      | 39.36  | 47.89 |
-| PandaSet  | petr_pandaset_vovnet_gridmask_p4_960x352      |   1.34   |       TBA      | 25.37  | 28.88 |
-|           | petrv2_pandaset_vovnet_gridmask_p4_960x352    |          |                |        |       |
+| NuScenes  | streampetr_r50_256x704_bs4_seq_24e            |   0.38   |       TBA      | 39.07  | 48.92 |
+|           | far3d_vovnet_gridmask_960x640                 |   2.20   |       TBA      | 41.75  | 52.79 |
 
 
 <!--
@@ -158,7 +122,7 @@ Export of ONNX model (.onnx) is supported by setting the field `save_onnx_model`
 
 ```bash
 model = dict(
-    type='PETR',
+    type='StreamPETR',
     save_onnx_model=True,
     data_preprocessor=dict(
         type='Det3DDataPreprocessor',
@@ -169,7 +133,7 @@ model = dict(
 
 ## References
 
-[1] PETR: Position Embedding Transformation for Multi-View 3D Object Detection, Y. Liu, T. Wang, X. Zhang, J. Sun, https://arxiv.org/abs/2203.05625
+[1] Exploring Object-Centric Temporal Modeling for Efficient Multi-View 3D Object Detection, S. Wang, Y. Liu, T. Wang, X. Zhang, https://arxiv.org/abs/2303.11926
 
-[2] PETRv2: A Unified Framework for 3D Perception from Multi-Camera Images, Y. Liu, J. Yan, F. Jia, S. Li, A. Gao, T. Wang, X. Zhang, J. Sun, https://arxiv.org/abs/2206.01256
+[2] Far3D: Expanding the Horizon for Surround-view 3D Object Detection, X. Jiang, S. Li, Y. Liu, S. Wang, F. Jia, T. Wang, L. Han, X. Zhang, https://arxiv.org/abs/2308.09616
 
