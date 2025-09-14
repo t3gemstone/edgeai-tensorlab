@@ -18,17 +18,10 @@ We implement and provide the results and checkpoints on the NuScenes dataset.  <
 
 Prepare the nuScenes dataset as per the MMDetection3D documentation [NuScenes Dataset Preperation](../../docs/en/advanced_guides/datasets/nuscenes.md). 
 
-After downloading nuScenes 3D detection dataset and unzipping all zip files, we typically need to organize the useful data information with a `.pkl` file in a specific style.
-To prepare these files for nuScenes, run the following command:
+After downloading nuScenes 3D detection dataset and unzipping all zip files, we typically need to organize the useful data information with a `.pkl` file in a specific style. To prepare them with NuScenes dataset for BEVDet, run the following command:
 
 ```bash
-python tools/create_data.py nuscenes --root-path ./data/nuscenes --out-dir ./data/nuscenes --extra-tag nuscenes/
-```
-
-This command creates `.pkl` files for PETR, BEVFormer and FCOS3D. To include additional data fields for BEVDet and PETRv2, we should add `--bevdet` and `--petrv2`, respectively, to the command. For example,
-
-```bash
-python tools/create_data.py nuscenes --root-path ./data/nuscenes --out-dir ./data/nuscenes --extra-tag nuscenes --bevdet --petrv2
+python tools/create_data.py nuscenes --root-path ./data/nuscenes --out-dir ./data/nuscenes --extra-tag nuscenes/ --bevdet
 ```
 
 The directory structure after processing should be as below.
@@ -97,10 +90,10 @@ Refer the MMDetection3D documentation [Test and Train with Standard Datasets](..
     For example, to use 2 GPUs use the command
     ```bash
     # NuScenes
-    ./tools/dist_train.sh projects/BEVDet/configs/bevdet-r50.py 2
+    ./tools/dist_train.sh projects_edgeai/BEVDet/configs/nuscenes/bevdet_r50.py 2
 
     # PandaSet
-    ./tools/dist_train.sh projects/BEVDet/configs/bevdet_pandaset-r50.py 2
+    ./tools/dist_train.sh projects_edgeai/BEVDet/configs/pandaset/bevdet_pandaset_r50.py 2
     ```
 
 3.  Do evalution using the command 
@@ -111,10 +104,10 @@ Refer the MMDetection3D documentation [Test and Train with Standard Datasets](..
 
     ```bash
     # NuScenes
-    python ./tools/test.py projects/BEVDet/configs/bevdet-r50.py ./work_dirs/bevdet-r50/epoch_24.pth
+    python ./tools/test.py projects_edgeai/BEVDet/configs/nuscenes/bevdet_r50.py ./work_dirs/bevdet_r50/epoch_24.pth
 
     # PandaSet
-    python ./tools/test.py projects/BEVDet/configs/bevdet_pandaset-r50.py ./work_dirs/bevdet_pandaset-r50/epoch_24.pth
+    python ./tools/test.py projects_edgeai/BEVDet/configs/pandaset/bevdet_pandaset_r50.py ./work_dirs/bevdet_pandaset-r50/epoch_24.pth
     ```
     Note: This is single GPU evalution command. "./dist_test.sh" can be used for multiple GPU evalution process.
 
