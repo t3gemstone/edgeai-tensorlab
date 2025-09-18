@@ -4,18 +4,18 @@ from typing import Dict, List, Tuple, Union
 import torch
 from torch import Tensor
 
+from mmdet.structures import DetDataSample, OptSampleList
 from mmdet3d.registry import MODELS
 from mmdet3d.utils import ConfigType, OptConfigType, OptMultiConfig
+
+from projects_edgeai.FCOS3D.fcos3d.onnx_export import export_FCOS3D
 from ...structures.det3d_data_sample import SampleList
 from .single_stage_mono3d import SingleStageMono3DDetector
 
-from mmdet.structures import DetDataSample, OptSampleList
 
 ForwardResults = Union[Dict[str, torch.Tensor], List[DetDataSample],
                        Tuple[torch.Tensor], torch.Tensor]
-from .onnx_export import export_FCOS3D
 
-EXPORT_ONNX = False
 
 @MODELS.register_module()
 class FCOSMono3D(SingleStageMono3DDetector):

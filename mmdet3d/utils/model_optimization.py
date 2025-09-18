@@ -27,18 +27,18 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 import copy
-import torch
-from torch.fx import symbolic_trace, GraphModule
-from torch import nn
-from mmcv.cnn import bricks
 import types
-import edgeai_torchmodelopt
-from torch.fx import GraphModule
+import torch
+from torch import nn
+from torch.fx import symbolic_trace, GraphModule
 from torch.fx.passes.utils.source_matcher_utils import SourcePartition
-
-from edgeai_torchmodelopt import xmodelopt, xops
-from projects.FCOS3D.fcos3d.modulated_deform_conv_tidl import ModulatedDeformConv2dTIDL
+from mmcv.cnn import bricks
 from mmcv.ops.modulated_deform_conv import ModulatedDeformConv2dPack
+
+import edgeai_torchmodelopt
+from edgeai_torchmodelopt import xmodelopt, xops
+
+from projects_edgeai.edgeai_mmdet3d.convs.modulated_deform_conv_tidl import ModulatedDeformConv2dTIDL
 
 
 def wrap_fn_for_bbox_head(fn, module:nn.Module, *args, **kwargs):

@@ -123,7 +123,7 @@ Prepare the nuScenes dataset as per the PandaSet documentation [PandaSet Dataset
 
 ### KITTI Dataset
 
-Prepare the KITTI dataset as per the MMDetection3D documentation [KITTI dataset preperation](../../docs/en/advanced_guides/datasets/kitti.md). 
+Prepare the KITTI dataset as per the MMDetection3D documentation [KITTI dataset preperation](./docs/en/advanced_guides/datasets/kitti.md).
 
 
 <hr>
@@ -171,40 +171,54 @@ Prepare the KITTI dataset as per the MMDetection3D documentation [KITTI dataset 
     <td align="center">Yes</td>
     <td align="center">Yes</td>
     <td align="center">In Progress</td>
-  </tr>  
+  </tr>
     <tr>
     <td>BEVDet</td>
     <td align="center">Yes</td>
     <td align="center">Yes</td>
     <td align="center">No</td>
-  </tr>  
+  </tr>
+  </tr>
+    <tr>
+    <td>StreamPETR</td>
+    <td align="center">Yes</td>
+    <td align="center">In Progress</td>
+    <td align="center">No</td>
+  </tr>
+  </tr>
+    <tr>
+    <td>Far3D</td>
+    <td align="center">Yes</td>
+    <td align="center">In Progress</td>
+    <td align="center">No</td>
+  </tr>
 </table>
 
 
 ### FastBEV
 
-FastBEV has been trained and validated with egdgeai-mmdetection3d. Data preparation, training and testing of them can be found in [FastBEV](./projects/FastBEV/README.md).
+FastBEV has been trained and validated with egdgeai-mmdetection3d. Data preparation, training and testing of them can be found in [FastBEV](./projects_edgeai/FastBEV/README.md).
 
 ### BEVFormer
 
-BEVFormer has been trained and validated with egdgeai-mmdetection3d. Data preparation, training and testing of BEVFormer can be found in [BEVFormer](./projects/BEVFormer/README.md).
+BEVFormer has been trained and validated with egdgeai-mmdetection3d. Data preparation, training and testing of BEVFormer can be found in [BEVFormer](./projects_edgeai/BEVFormer/README.md).
 
 ### PETR / PETRv2
 
-PETR and PETRv2 have been trained and validated with egdgeai-mmdetection3d. Data preparation, training and testing of them can be found in [PETR/PETRv2](./projects/PETR/README.md).
+PETR and PETRv2 have been trained and validated with egdgeai-mmdetection3d. Data preparation, training and testing of them can be found in [PETR/PETRv2](./projects_edgeai/PETR/README.md).
 
 ### BEVDet
 
-BEVDet has been trained and validated with egdgeai-mmdetection3d. Data preparation, training and testing of BEVDet can be found in [BEVDet](./projects/BEVDet/README.md).
+BEVDet has been trained and validated with egdgeai-mmdetection3d. Data preparation, training and testing of BEVDet can be found in [BEVDet](./projects_edgeai/BEVDet/README.md).
 
 ### FCOS3D
 
-FCOS3D has been trained and validated with egdgeai-mmdetection3d. Data preparation, training and testing of them can be found in [FCOS3D](./projects/FCOS3D/README.md).
+FCOS3D has been trained and validated with egdgeai-mmdetection3d. Data preparation, training and testing of them can be found in [FCOS3D](./projects_edgeai/FCOS3D/README.md).
 
 
 ### PointPillars
 
-PointPillars has been trained and validated with egdgeai-mmdetection3d. Data preparation, training and testing of PointPillars can be found in [PointPillars](./projects/PointPillars/README.md).
+PointPillars has been trained and validated with egdgeai-mmdetection3d. Data preparation, training and testing of PointPillars can be found in [PointPillars](./projects_edgeai/PointPillars/README.md).
 
 
 <hr>
