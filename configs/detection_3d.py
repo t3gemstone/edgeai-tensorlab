@@ -162,7 +162,7 @@ def get_configs(settings, work_dir):
                 model_path=f'{settings.models_path}/vision/detection_3d/pandaset/mmdet3d/fastbev/fastbev_mod_pandaset_nms_r18_f1_256x704_20250507.onnx'),
             postprocess=postproc_transforms.get_transform_bev_detection_fastbev(enable_nms=False),
             metric=dict(),
-            model_info=dict(metric_reference={'mAP':0.4})
+            model_info=dict(metric_reference={'mAP':0.4}, model_shortlist=100)
         ),
     }
 
