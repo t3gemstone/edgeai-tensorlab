@@ -81,15 +81,12 @@ default_replacement_flag_dict = {
     'dropout_inplace_to_dropout'           : True,
     'replace_CNBlock'                      : True,
     'focus_to_optimized_focus'             : False,
-    'break_maxpool2d_with_kernel_\
-        size_greater_than_equalto_5'       : True,
-    'break_avgpool2d_with_kernel_\
-        size_greater_than_equalto_5'       : True,
+    'break_maxpool2d_with_kernel_size_greater_than_equalto_5'       : True,
+    'break_avgpool2d_with_kernel_size_greater_than_equalto_5'       : True,
     'convert_resize_params_size_to_scale'  : True,
     'replace_conv_k_size_6_to_k_size_5'    : True,
     # 'promote_conv2d_with_even_kernel_to_larger_odd_kernel':False,
-    'break_conv2d_with_kernel_size_\
-        greater_than_7'                    : False,
+    'break_conv2d_with_kernel_size_greater_than_7'                    : False,
     # 'custom_surgery_flag':{},
 }
 
@@ -100,10 +97,8 @@ default_replacement_flag_dict_no_training = {
     # 'relu6_to_relu' : True,
     'dropout_inplace_to_dropout'           : True,
     # 'focus_to_optimized_focus':True,
-    'break_maxpool2d_with_kernel_size\
-        _greater_than_equalto_5'           : True,
-    'break_avgpool2d_with_kernel_size\
-        _greater_than_equalto_5'           : True,
+    'break_maxpool2d_with_kernel_size_greater_than_equalto_5'           : True,
+    'break_avgpool2d_with_kernel_size_greater_than_equalto_5'           : True,
     'convert_resize_params_size_to_scale'  : True,
     # 'promote_conv2d_with_even_kernel_to_larger_odd_kernel':False,
     # 'custom_surgery_flag':{},
@@ -135,12 +130,9 @@ flag_to_dict_entries = {
     'replace_CNBlock'                       : {'CNBlock': custom_surgery_functions.replace_cnblock},
     'focus_to_optimized_focus'              : {custom_modules.Focus(): custom_modules.OptimizedFocus()},
     'replace_conv_k_size_6_to_k_size_5'     : {'conv_6': custom_surgery_functions.replace_conv2d_kernel_size_6},
-    'break_conv2d_with_kernel_\
-        size_greater_than_7'                : {'conv_ge_7': custom_surgery_functions.replace_conv2d_kernel_size_gt_7},
-    'break_maxpool2d_with_kernel_size\
-        _greater_than_equalto_5'            : {'maxpool_ge_5': custom_surgery_functions.replace_maxpool2d_kernel_size_ge_5},
-    'break_avgpool2d_with_kernel_size\
-        _greater_than_equalto_5'            : {'avgpool_ge_5': custom_surgery_functions.replace_avgpool2d_kernel_size_ge_5},
+    'break_conv2d_with_kernel_size_greater_than_7'                : {'conv_ge_7': custom_surgery_functions.replace_conv2d_kernel_size_gt_7},
+    'break_maxpool2d_with_kernel_size_greater_than_equalto_5'            : {'maxpool_ge_5': custom_surgery_functions.replace_maxpool2d_kernel_size_ge_5},
+    'break_avgpool2d_with_kernel_size_greater_than_equalto_5'            : {'avgpool_ge_5': custom_surgery_functions.replace_avgpool2d_kernel_size_ge_5},
     'convert_resize_params_size_to_scale'   : {'upsample': custom_surgery_functions.replace_resize_with_scale_factor},
 }
 
