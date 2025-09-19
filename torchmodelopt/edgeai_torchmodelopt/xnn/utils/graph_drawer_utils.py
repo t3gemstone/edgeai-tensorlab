@@ -4,12 +4,13 @@ from itertools import chain
 import pydot 
 from torch import fx
 
+from torch.fx.node import _format_arg
+from torch.fx.passes.graph_drawer import FxGraphDrawer, _WEIGHT_TEMPLATE
 try:
-    from torch.fx.node import _format_arg
-    from torch.fx.graph import _parse_stack_trace
-    from torch.fx.passes.graph_drawer import FxGraphDrawer, _WEIGHT_TEMPLATE
-except:
-    print('WARNING: graph drawing functions for Pytorch models are not available - please update Pytorch to a more recent version to enable.')
+    from torch.fx.graph_drawer import _parse_stack_trace
+except ImportError:
+    def _parse_stack_trace(stack_trace): return None
+    print("Warning: _parse_stack_trace not found in torch.fx.graph_drawer. Using a dummy function.")
 
 
 class CustomFxGraphDrawer(FxGraphDrawer):

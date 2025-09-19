@@ -7,3 +7,5 @@ pyyaml
 torchinfo
 onnxsim
 pydot
+torch
+onnxruntime-tidl
