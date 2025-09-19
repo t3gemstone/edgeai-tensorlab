@@ -38,9 +38,9 @@ dependencies = [
 ]
 
 [project.urls]
-"Homepage" = "https://bitbucket.itg.ti.com/projects/EDGEAI-ALGO/repos/edgeai-benchmark/browse"
-"Bug Reports" = "https://bitbucket.itg.ti.com/projects/EDGEAI-ALGO/repos/edgeai-benchmark/issues"
-"Source" = "https://bitbucket.itg.ti.com/projects/EDGEAI-ALGO/repos/edgeai-benchmark/browse"
+"Homepage" = "https://github.com/TexasInstruments/edgeai-tensorlab/tree/main/edgeai-benchmark"
+"Bug Reports" = "https://github.com/TexasInstruments/edgeai-tensorlab/issues"
+"Source" = "https://github.com/TexasInstruments/edgeai-tensorlab/tree/main/edgeai-benchmark"
 
 [project.optional-dependencies]
 pc = [

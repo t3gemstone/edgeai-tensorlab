@@ -26,9 +26,9 @@ dependencies = [
 ]
 
 [project.urls]
-"Homepage" = "https://bitbucket.itg.ti.com/projects/EDGEAI-ALGO/repos/edgeai-benchmark/browse"
+"Homepage" = "https://github.com/TexasInstruments/edgeai-tensorlab/tree/main/edgeai-benchmark"
 "Bug Reports" = "https://e2e.ti.com/support/processors-group/processors/tags/TIDL"
-"Source" = "https://bitbucket.itg.ti.com/projects/EDGEAI-ALGO/repos/edgeai-benchmark/browse"
+"Source" = "https://github.com/TexasInstruments/edgeai-tensorlab/tree/main/edgeai-benchmark"
 
 [tool.setuptools.packages.find]
 where = ["."]
