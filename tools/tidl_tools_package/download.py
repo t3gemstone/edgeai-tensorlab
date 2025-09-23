@@ -488,7 +488,7 @@ def setup_tidl_tools(install_path, tools_version, tools_type):
         subprocess.check_call([sys.executable, '-m', 'pip', 'install', '-r', requirements_file])
     except subprocess.CalledProcessError as e:
         print(f"WARNING: Failed to install requirements from {requirements_file}: {e}")
-        print(f"Please manually run: {sys.executable} -m pip install -r {requirements_file}")
+        print(f"Please manually run: {sys.executable} -m pip3 install -r {requirements_file}")
 
 
 ###############################################################################
