@@ -32,5 +32,15 @@
 ######################################################################
 pip3 install -e ./[evm]
 
+
+######################################################################
+echo "setting pandaset Python package for 3D object detection"
+echo "to use it, make sure the dataset has been downloaded as explained in ./docs/datsets.md"
+./setup_pandaset.sh
+
+
 #######################################################################
-echo 'Completed installation.'
+echo "to be able to use this package, datasets are required. some are automatically downloaded as the benchmark script is invoked."
+echo "for the other datasets, the user may need to download manually, as explained in ./docs/setup_installation.md and ./docs/datasets.md"
+echo "there are various options to restrict the datasets and models used - please see settings_base.yaml"
+echo "completed installation."

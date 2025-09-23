@@ -20,6 +20,13 @@ Untar inside the folder dependencies/datasets/imagenet. After that folder *depen
 
 After these operations, we should have the folder *dependencies/datasets/imagenet/val* with 50,000 images and and a text file  *dependencies/datasets/imagenet/val.txt*
 
+### ImageNetV2c
+Our script can download ImageNetV2c dataset automatically - so the following is for information only.
+
+ImageNetV2c or imagenetv2-top-images is a small validation set that can be used in the plae of ImageNet validation set. 
+The accuracy on ImageNetV2C does not exactly match that of original Imagenet validation, but it is close - within a few percentage points: 
+More Information: https://huggingface.co/datasets/vaishaal/ImageNetV2/tree/main
+
 ## COCO dataset
 Our script can download COCO dataset automatically - so the following is for information only.
 
@@ -55,10 +62,19 @@ If you download and place these tar files in the folder dependencies/datasets/VO
 
 After processing the follwoing folders must be available: *dependencies/datasets/VOCdevkit/VOC2012/Annotations*, *dependencies/datasets/VOCdevkit/VOC2012/ImageSets*, *dependencies/datasets/VOCdevkit/VOC2012/JPEGImages*, *dependencies/datasets/VOCdevkit/VOC2012/SegmentationClass*, *dependencies/datasets/VOCdevkit/VOC2012/SegmentationClassRaw*
 
+## Pandaset Dataset
+Pandaset dataset is used for 3D Object Detection. This dataset is not automatically downloaded. To use pandaset, make sure the dataset has been downloaded from https://huggingface.co/datasets/georghess/pandaset/tree/main and placed it under ./dependencies/datasets/pandaset"
+
+Also, [pandaset Python package](https://github.com/scaleapi/pandaset-devkit/tree/master/python) is required to actually benchmark using the dataset - install it using the script [setup_pandaset.sh](../setup_pandaset.sh):
+```
+./setup_pandaset.sh
+```
+
 ## Cityscapes dataset
 Cityscapes dataset  is not freely available for download, but you can obtain it for experimentation purposes by registering in their website https://www.cityscapes-dataset.com/.
 
 The dataset should be available in the path *dependencies/datasets/cityscpaes* - we use only the validation split - which should be in the folders *dependencies/datasets/cityscpaes/cityscapes/leftImg8bit/val* and *dependencies/datasets/cityscpaes/cityscapes/gtFine/val*<br>
+
 
 ## KITTI dataset
 KITTI dataset downloading needs user registration hence our script can not download it automatically. User is requested to register at
