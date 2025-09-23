@@ -36,14 +36,8 @@ TARGET_SOC=${1-AM68A}
 # pc: for model compilation and inference on PC, evm: for model inference on EVM
 TARGET_MACHINE=evm
 
-# settigns model_shortlist will cause only selected models to be run
-# in ./configs folder, model configs have a model_shortlist associated with them
-# in this script, if --model_shortlist is set to 120, only those models with model_shortlist values <= 120 will run
-MODEL_SHORTLIST=120
-
-
-echo "TARGET_SOC:      ${TARGET_SOC}"
-echo "MODEL_SHORTLIST: ${MODEL_SHORTLIST}"
+echo "TARGET_SOC:     ${TARGET_SOC}"
+echo "TARGET_MACHINE: ${TARGET_MACHINE}"
 
 ##################################################################
 # set environment variables
@@ -54,7 +48,9 @@ source ./run_set_env.sh ${TARGET_SOC} ${TARGET_MACHINE}
 SETTINGS_FILE=settings_infer_on_evm.yaml
 
 echo "==================================================================="
-python3 ./scripts/benchmark_modelzoo.py ${SETTINGS_FILE} --target_device ${TARGET_SOC} --target_machine ${TARGET_MACHINE} --model_shortlist ${MODEL_SHORTLIST} "${@:2}"
-python3 ./scripts/generate_report.py ${SETTINGS_FILE}
+python3 ./scripts/benchmark_modelzoo.py ${SETTINGS_FILE} --target_device ${TARGET_SOC} --target_machine ${TARGET_MACHINE} "${@:2}"
 echo "==================================================================="
 
+echo "==================================================================="
+python3 ./scripts/generate_report.py ${SETTINGS_FILE}
+echo "==================================================================="

@@ -49,7 +49,7 @@ source ./run_set_env.sh ${TARGET_SOC} ${TARGET_MACHINE}
 SETTINGS_FILE=settings_import_on_pc.yaml
 
 echo "==================================================================="
-python3 ./scripts/benchmark_modelzoo.py ${SETTINGS_FILE} --target_device ${TARGET_SOC} "${@:2}"
+python3 ./scripts/benchmark_modelzoo.py ${SETTINGS_FILE} --target_device ${TARGET_SOC} --target_machine ${TARGET_MACHINE} "${@:2}"
 echo "==================================================================="
 
 echo "==================================================================="
