@@ -644,7 +644,7 @@ class GetPETRGeometry():
 
         # forward() in petr_head.py
         # masks is simply (B, N, self.H, self.W) array initialized to False
-        masks = np.zeros((batch_size, num_cams, self.H, self.W)).astype(np.int32)
+        masks = np.zeros((batch_size, num_cams, self.H, self.W)).astype(bool)
 
         eps = 1e-5
         B, N, C, H, W = self.B, num_cams, self.C, self.H, self.W
@@ -1357,7 +1357,7 @@ class GetFastBEVGeometry():
         cum_valid = cum_valid[0]
 
         for i in reversed(range(n_images)):
-            valid_idx = np.multiply(cum_valid, valid[i]).astype(np.bool)
+            valid_idx = np.multiply(cum_valid, valid[i]).astype(bool)
             coor[0, valid_idx] = xy_coor[i, valid_idx] + i*width*height
             cum_valid[valid_idx] = False
 
