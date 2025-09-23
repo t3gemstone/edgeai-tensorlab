@@ -34,7 +34,8 @@ dependencies = [
     "scikit-learn",
     "pyquaternion",
     "debugpy",
-    "packaging"
+    "packaging",
+    "matplotlib"
 ]
 
 [project.urls]
