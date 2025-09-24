@@ -8,4 +8,3 @@ torchinfo
 onnxsim
 pydot
 torch
-onnxruntime-tidl
