@@ -644,7 +644,7 @@ class GetPETRGeometry():
 
         # forward() in petr_head.py
         # masks is simply (B, N, self.H, self.W) array initialized to False
-        masks = np.zeros((batch_size, num_cams, self.H, self.W)).astype(np.bool)
+        masks = np.zeros((batch_size, num_cams, self.H, self.W)).astype(bool)
 
         eps = 1e-5
         B, N, C, H, W = self.B, num_cams, self.C, self.H, self.W
@@ -893,7 +893,7 @@ class GetBEVDetGeometry():
         coor = ((coor - self.grid_lower_bound) /
                 self.grid_interval)
 
-        coor = coor.astype(np.long).reshape(num_points, 3)
+        coor = coor.astype(np.longlong).reshape(num_points, 3)
         #batch_idx = np.arange(0, B).reshape(B, 1). \
         #    expand(B, num_points // B).reshape(num_points, 1)
         batch_idx = np.arange(0, B).reshape(B, 1)
@@ -906,7 +906,7 @@ class GetBEVDetGeometry():
                (coor[:, 2] >= 0) & (coor[:, 2] < self.grid_size[2])
 
         # for our BEV pooling - coor in 1D tensor
-        num_grids = (B*self.grid_size[2]*self.grid_size[1]*self.grid_size[0]).astype(np.int)
+        num_grids = (B*self.grid_size[2]*self.grid_size[1]*self.grid_size[0]).astype(np.int32)
 
         #bev_feat = np.zeros((num_grids + 1, self.out_channels), device=coor.device)
         bev_feat = np.zeros((num_grids + 1, self.out_channels), dtype=np.float32)
@@ -915,7 +915,7 @@ class GetBEVDetGeometry():
         coor_1d  = coor[:, 3] * (self.grid_size[2] * self.grid_size[1] * self.grid_size[0]) + \
                    coor[:, 2] * (self.grid_size[1] * self.grid_size[0]) + \
                    coor[:, 1] *  self.grid_size[0] + coor[:, 0]
-        coor_1d[np.where(kept==False)] = (B * self.grid_size[2] * self.grid_size[1] * self.grid_size[0]).astype(np.long)
+        coor_1d[np.where(kept==False)] = (B * self.grid_size[2] * self.grid_size[1] * self.grid_size[0]).astype(np.longlong)
         #for i in range(num_points):
         #    if kept[i]:
         #        coor_1d[i]  = coor[i, 3] * (self.grid_size[2] * self.grid_size[1] * self.grid_size[0]) + \
@@ -924,7 +924,7 @@ class GetBEVDetGeometry():
         #    else:
         #        coor_1d[i] = B * self.grid_size[2] * self.grid_size[1] * self.grid_size[0]
 
-        return bev_feat, np.ascontiguousarray(coor_1d.astype(np.long))
+        return bev_feat, np.ascontiguousarray(coor_1d.astype(np.longlong))
 
 
     def __call__(self, data, info_dict):
@@ -1344,8 +1344,8 @@ class GetFastBEVGeometry():
     
         # ego_to_cam
         points_2d_3 = np.matmul(projection, points)  # lidar2img
-        x = (points_2d_3[:, 0] / points_2d_3[:, 2]).round().astype(np.long)  # [6, 160000]
-        y = (points_2d_3[:, 1] / points_2d_3[:, 2]).round().astype(np.long)  # [6, 160000]
+        x = (points_2d_3[:, 0] / points_2d_3[:, 2]).round().astype(np.longlong)  # [6, 160000]
+        y = (points_2d_3[:, 1] / points_2d_3[:, 2]).round().astype(np.longlong)  # [6, 160000]
         z = points_2d_3[:, 2]  # [6, 160000]
         valid = (x >= 0) & (y >= 0) & (x < width) & (y < height) & (z > 0)  # [6, 160000]
 
@@ -1357,7 +1357,7 @@ class GetFastBEVGeometry():
         cum_valid = cum_valid[0]
 
         for i in reversed(range(n_images)):
-            valid_idx = np.multiply(cum_valid, valid[i]).astype(np.bool)
+            valid_idx = np.multiply(cum_valid, valid[i]).astype(bool)
             coor[0, valid_idx] = xy_coor[i, valid_idx] + i*width*height
             cum_valid[valid_idx] = False
 
