@@ -55,14 +55,14 @@ command="./references/classification/train.py --data-path=./data/datasets/imagen
 --epochs=10 --batch-size=64 --wd=4e-5 --lr=0.0001 --lr-scheduler=cosineannealinglr --lr-warmup-epochs=1 \
 --model=${model} --model-surgery=2 --quantization=2 --quantization-type=MSA_WC8_AT8 --quantization-method=QAT \
 --opset-version=17 --val-resize-size=$val_resize_size --val-crop-size=$val_crop_size \
---quantize-calib-images=1000"
+--quantize-calib-images=6400"
 
 #==================================PTC=====================================================
 # command="./references/classification/train.py --data-path=./data/datasets/imagenet \
 # --epochs=3 --batch-size=64 --wd=4e-5 --lr=0.0001 --lr-scheduler=cosineannealinglr --lr-warmup-epochs=1 \
 # --model=${model} --model-surgery=2 --quantization=2 --quantization-type=MSA_WC8_AT8 --quantization-method=PTC \
 # --opset-version=17 --val-resize-size=$val_resize_size --val-crop-size=$val_crop_size \
-# --quantize-calib-images=100"
+# --quantize-calib-images=6400"
 
 # training: single GPU (--device=cuda:0)or CPU (--device=cpu) run
 python3 ${command} --weights=${model_weights} --output-dir=${output_dir}

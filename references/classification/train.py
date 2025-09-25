@@ -35,8 +35,9 @@ def train_one_epoch(model, criterion, optimizer, data_loader, device, epoch, arg
     metric_logger.add_meter("img/s", utils.SmoothedValue(window_size=10, fmt="{value}"))
     dataset_len = len(data_loader)
 
+    num_images_tracked = 0
     header = f"Epoch: [{epoch}]"
-    for i, (image, target) in enumerate(metric_logger.log_every(data_loader, args.print_freq, header)):
+    for batch_idx, (image, target) in enumerate(metric_logger.log_every(data_loader, args.print_freq, header)):
         start_time = time.time()
         image, target = image.to(device), target.to(device)
         # autocast takes str argument
@@ -61,19 +62,20 @@ def train_one_epoch(model, criterion, optimizer, data_loader, device, epoch, arg
                     nn.utils.clip_grad_norm_(model.parameters(), args.clip_grad_norm)
                 optimizer.step()
 
-            if model_ema and i % args.model_ema_steps == 0:
+            if model_ema and batch_idx % args.model_ema_steps == 0:
                 model_ema.update_parameters(model)
                 if epoch < args.lr_warmup_epochs:
                     # Reset ema buffer to keep copying weights during warmup period
                     model_ema.n_averaged.fill_(0)
 
         acc1, acc5 = utils.accuracy(output, target, topk=(1, 5))
-        batch_size = image.shape[0]
+        batch_size = int(image.shape[0])
         metric_logger.update(loss=loss.item(), lr=optimizer.param_groups[0]["lr"])
         metric_logger.meters["acc1"].update(acc1.item(), n=batch_size)
         metric_logger.meters["acc5"].update(acc5.item(), n=batch_size)
         metric_logger.meters["img/s"].update(batch_size / (time.time() - start_time))
-        if args.train_epoch_size_factor and i >= round(args.train_epoch_size_factor * dataset_len):
+        num_images_tracked += batch_size
+        if args.train_epoch_size_factor and num_images_tracked >= round(args.train_epoch_size_factor * dataset_len):
             break
 
 
@@ -86,7 +88,7 @@ def evaluate(args, model, criterion, data_loader, device, print_freq=100, log_su
     num_processed_samples = 0
     confusion_matrix_total = np.zeros((kwargs.get('num_classes'), kwargs.get('num_classes')))
     with torch.inference_mode():
-        for i, (image, target) in enumerate(metric_logger.log_every(data_loader, print_freq, header)):
+        for batch_idx, (image, target) in enumerate(metric_logger.log_every(data_loader, print_freq, header)):
             image = image.to(device, non_blocking=True)
             target = target.to(device, non_blocking=True)
             output = model(image)
@@ -698,7 +700,7 @@ def get_args_parser(add_help=True):
     parser.add_argument("--quantization", "--quantize", dest="quantization", default=0, type=int, choices=edgeai_torchmodelopt.xmodelopt.quantization.QuantizationVersion.get_choices(), help="Quaantization Aware Training (QAT)")
     parser.add_argument("--quantization-type", default=None, help="Actual Quantization Flavour - applies only if quantization is enabled")
     parser.add_argument("--quantization-method", default=None, help="Quantization Method to be used - either PTC or QAT ")
-    parser.add_argument("--quantize-calib-images", default=100, help="Calibration Images for PTC - applies only if quantization and PTC is enabled")
+    parser.add_argument("--quantize-calib-images", default=6400, help="Calibration Images for PTC - applies only if quantization and PTC is enabled")
 
     parser.add_argument("--pruning", default=0, type=int, help="Pruning/Sparsity")
     parser.add_argument("--pruning-ratio", default=0.640625, type=float, help="Pruning/Sparsity Factor - applies only if pruning is enabled")
