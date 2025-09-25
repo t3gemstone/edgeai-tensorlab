@@ -51,10 +51,10 @@ command="./references/classification/train.py --data-path=./data/datasets/imagen
 --pruning=2 --pruning-type=n2m --pruning-global=0 --pruning-ratio=0.640625 --pruning-m=64 --pruning-init-train-ep=5"
 
 # training: single GPU (--device=cuda:0)or CPU (--device=cpu) run
-# python3 ${command} --weights=${model_weights} --output-dir=${output_dir}
+python3 ${command} --weights=${model_weights} --output-dir=${output_dir}
 
 # training: multi-gpu distributed data parallel
-torchrun --nproc_per_node 4 ${command} --weights=${model_weights} --output-dir=${output_dir}
+# torchrun --nproc_per_node 4 ${command} --weights=${model_weights} --output-dir=${output_dir}
 
 # testing after the training
 # torchrun --nproc_per_node 4 ${command} --test-only --weights=${output_dir}/checkpoint.pth --output-dir=${output_dir}/test
