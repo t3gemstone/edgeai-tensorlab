@@ -335,6 +335,7 @@ class ModelTraining:
                 '--lr-warmup-epochs', '1',
                 '--distributed', f'{distributed}',
                 '--device', f'{device}',
+                '--with-confusion-matrix', '1',
                 #'--tensorboard-logger', 'True',
                 ]
         run_script = os.path.join(edgeai_torchvision_path,'references','classification','train.py')
