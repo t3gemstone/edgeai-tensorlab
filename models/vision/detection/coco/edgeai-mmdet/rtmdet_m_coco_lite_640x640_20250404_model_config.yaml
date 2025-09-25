@@ -18,7 +18,6 @@ preprocess:
   - 114
 session:
   session_name: onnxrt
-  target_device: null
   input_optimization: false
   input_data_layout: NCHW
   input_mean:
@@ -30,19 +29,8 @@ session:
   - 0.017507
   - 0.017125
   runtime_options:
-    advanced_options:quantization_scale_type: 4
-    tensor_bits: 8
-    accuracy_level: 1
-    advanced_options:high_resolution_optimization: 0
-    advanced_options:pre_batchnorm_fold: 1
-    advanced_options:calibration_frames: 12
-    advanced_options:calibration_iterations: 12
-    advanced_options:activation_clipping: 1
-    advanced_options:weight_clipping: 1
-    advanced_options:bias_calibration: 1
     advanced_options:output_feature_16bit_names_list: 254,267,280,259,272,285
     advanced_options:params_16bit_names_list: ''
-    advanced_options:add_data_convert_ops: 3
     object_detection:meta_arch_type: 8
     object_detection:meta_layers_names_list: rtmdet_m_coco_lite_640x640_20250404_model.prototxt
   model_path: rtmdet_m_coco_lite_640x640_20250404_model.onnx
@@ -51,7 +39,11 @@ session:
   output_details: null
   num_inputs: 1
 postprocess:
-  detection_threshold: 0.3
+  reshape_list:
+  - - -1
+    - 5
+  - - -1
+    - 1
   formatter:
     src_indices:
     - 5
@@ -68,6 +60,8 @@ postprocess:
   squeeze_axis: null
   ignore_index: null
   logits_bbox_to_bbox_ls: false
+  keypoint: false
+  object6dpose: false
 metric:
   label_offset_pred:
     0: 1

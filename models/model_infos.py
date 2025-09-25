@@ -49,6 +49,7 @@
     'ss-8710': { 'model_id': 'ss-8710', 'recommended': False, 'shortlisted': True, 'session_name': 'onnxrt', 'artifact_name': 'ONR-SS-8710-deeplabv3lite-mobv2-cocoseg21-512x512', },
     'ss-8720': { 'model_id': 'ss-8720', 'recommended': False, 'shortlisted': True, 'session_name': 'onnxrt', 'artifact_name': 'ONR-SS-8720-deeplabv3lite-regnetx800mf-cocoseg21-512x512', },
     'ss-8740': { 'model_id': 'ss-8740', 'recommended': False, 'shortlisted': True, 'session_name': 'onnxrt', 'artifact_name': 'ONR-SS-8740-lraspp-mobV3-ti-lite-large-cocoseg21-512x512', },
+    '3dod-8161': { 'model_id': '3dod-8161', 'recommended': False, 'shortlisted': False, 'session_name': 'onnxrt', 'artifact_name': 'ONR-3DOD-8161-fastbev_mod_pandaset_nms_r18_f1_256x704_20250507', },
     'cl-0038': { 'model_id': 'cl-0038', 'recommended': False, 'shortlisted': False, 'session_name': 'tflitert', 'artifact_name': 'TFL-CL-0038-InceptionNetV1', },
     'cl-0040': { 'model_id': 'cl-0040', 'recommended': False, 'shortlisted': False, 'session_name': 'tflitert', 'artifact_name': 'TFL-CL-0040-InceptionNetV3', },
     'cl-0100': { 'model_id': 'cl-0100', 'recommended': False, 'shortlisted': False, 'session_name': 'tflitert', 'artifact_name': 'TFL-CL-0100-efficientNet-edgeTPU-m', },

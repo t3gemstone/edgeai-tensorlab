@@ -72,6 +72,7 @@ configs:
   od-9209: vision/detection/coco/edgeai-mmdet/rtmdet_l_coco_lite_640x640_20250310_model_config.yaml
   kd-7070: vision/keypoint/coco/edgeai-mmpose/yoloxpose_tiny_lite_416x416_20240808_model_config.yaml
   kd-7080: vision/keypoint/coco/edgeai-mmpose/yoloxpose_s_lite_coco-640x640_20250119_model_config.yaml
+  3dod-8161: vision/detection_3d/pandaset/mmdet3d/fastbev/fastbev_mod_pandaset_nms_r18_f1_256x704_20250507_config.yaml
   cl-0000: vision/classification/imagenet1k/mlperf/mobilenet_v1_1.0_224_config.yaml
   od-2020: vision/detection/coco/tf1-models/ssdlite_mobiledet_dsp_320x320_coco_20200519_config.yaml
   ss-2580: vision/segmentation/ade20k32/mlperf/deeplabv3_mnv2_ade20k32_float_config.yaml
