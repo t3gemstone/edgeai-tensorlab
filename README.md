@@ -9,26 +9,18 @@ Edge AI model training, quantization, compilation/benchmark & Model Zoo
 
 <hr>
 
-## Release 11.0
-* Release name: **11.0**
-* Git branch: **r11.0**
-* tidl_tools version: **11_00_08_00**
-* [edgeai-tidl-tools](https://github.com/TexasInstruments/edgeai-tidl-tools) git tag: [11_00_08_00](https://github.com/TexasInstruments/edgeai-tidl-tools/releases/tag/11_00_08_00)
-* Date: 2025 July 9
+## Release 11.1
+* Release name: **11.1**
+* Git branch: **r11.1**
+* tidl_tools version: **11_01_06_00**
+* [edgeai-tidl-tools](https://github.com/TexasInstruments/edgeai-tidl-tools) git tag: [11_01_06_00](https://github.com/TexasInstruments/edgeai-tidl-tools/releases/tag/11_01_06_00)
+* Date: 2025 September 25
 
-### New models in edgeai-modelzoo / edgeai-benchmark
-We are in the process of adding support for several new models. Configs for models verified in this release are in this repository and the models are available in edgeai-modelzoo. The following new models have been verified:
+Updated to match latest edgeai-tidl-tools release
 
-| Model name                    | Model Type                            | Source repository |
-|-------------------------------|---------------------------------------|------------------------|
-| rtmdet lite version (multiple flavours) | Object Detection                      | edgeai-mmdetection     |
-| fastbev (without temporal)    | Multi-view 3DOD for ADAS                      | edgeai-mmdetection3d     |
-| bevformer_tiny    | Multi-view 3DOD for ADAS                      | edgeai-mmdetection3d     |
+Models that are not enabled by default in edgeai-benchmark (model_shortlist=100) have been removed from edgeai-modelzoo as well.
 
-Note: The 3DOD models are trained with **pandaset dataset** (which is a Multi-view, Multi-modality ADAS / Automous Driving Dataset). edgeai-mmdetection3d and edgeai-benchmark now supports pandaset dataset. See more details of this dataset in edgeai-mmdetection3d.
-
-### Update on 2025 July 15
-* Accuracy fix for object detection models in edgeai-modelmaker and edgeai-mmdetection
+Example config files for models (_config.yaml file for each model) have been made more consistent - these now mostly only have parameters that are related to the model properties.
 
 
 **More details are in the [Release Notes](./docs/release_notes.md)**

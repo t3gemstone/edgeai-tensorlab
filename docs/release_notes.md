@@ -3,6 +3,21 @@
 
 <hr>
 
+## Release 11.1
+* Release name: **11.1**
+* Git branch: **r11.1**
+* tidl_tools version: **11_01_06_00**
+* [edgeai-tidl-tools](https://github.com/TexasInstruments/edgeai-tidl-tools) git tag: [11_01_06_00](https://github.com/TexasInstruments/edgeai-tidl-tools/releases/tag/11_01_06_00)
+* Date: 2025 September 25
+
+Updated to match latest edgeai-tidl-tools release
+
+Models that are not enabled by default in edgeai-benchmark (model_shortlist=100) have been removed from edgeai-modelzoo as well.
+
+Example config files for models (_config.yaml file for each model) have been made more consistent - these now mostly only have parameters that are related to the model properties.
+
+<hr>
+
 ## Release 11.0
 * Release name: **11.0**
 * Git branch: **r11.0**
