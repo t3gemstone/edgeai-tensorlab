@@ -22,7 +22,7 @@ preprocess:
   - 114
 session:
   session_name: onnxrt
-  target_device: null
+  #target_device: null
   input_optimization: false
   input_data_layout: NCHW
   input_mean:
