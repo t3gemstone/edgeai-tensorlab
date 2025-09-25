@@ -32,7 +32,9 @@ def train_one_epoch(model, criterion, optimizer, data_loader, device, epoch, arg
     for i, (image, target) in enumerate(metric_logger.log_every(data_loader, args.print_freq, header)):
         start_time = time.time()
         image, target = image.to(device), target.to(device)
-        with torch.amp.autocast(device_type=device.type, enabled=scaler is not None):
+        # autocast takes str argument
+        device_type_str = device.type if hasattr(device, 'type') else device
+        with torch.amp.autocast(device_type=device_type_str, enabled=scaler is not None):
             output = model(image)
             loss = criterion(output, target)
 
