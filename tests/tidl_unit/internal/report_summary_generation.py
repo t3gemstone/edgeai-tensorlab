@@ -86,16 +86,20 @@ if len(SOC_DIR) == 0:
     sys.exit(-1)
 
 for dir in SOC_DIR:
-    drop_compile_without_nc = True
-    drop_compile_with_nc = True
+    drop_compile_without_nc   = True
+    drop_compile_with_nc      = True
     drop_infer_ref_without_nc = True
-    drop_infer_ref_with_nc = True
-    drop_infer_natc_with_nc = True
-    drop_infer_ci_with_nc = True
+    drop_infer_ref_with_nc    = True
+    drop_infer_natc_with_nc   = True
+    drop_infer_ci_with_nc     = True
     drop_infer_target_with_nc = True
+    drop_infer_ref            = True
+    drop_infer_natc           = True
+    drop_infer_ci             = True
+    drop_infer_target         = True
 
     # Prepare the CSV headers
-    headers = ["Operator name", "Total Test", "TIDL Offload Percentage", "Compile without NC", "Compile with NC", "Infer REF without NC", "Infer REF with NC", "Infer NATC with NC", "Infer CI with NC", "Infer TARGET with NC"]
+    headers = ["Operator name", "Total Test", "TIDL Offload Percentage", "Compile without NC", "Compile with NC", "Infer REF without NC", "Infer REF with NC", "Infer NATC with NC", "Infer CI with NC", "Infer TARGET with NC", "Infer REF", "Infer NATC", "Infer CI", "Infer TARGET"]
     # Collect results
     rows = []
     # Iterate over each folder in the reports directory
@@ -113,26 +117,38 @@ for dir in SOC_DIR:
         infer_natc_with_nc = False
         infer_ci_with_nc = False
         infer_target_with_nc = False
+        infer_ref = False
+        infer_natc = False
+        infer_ci = False
+        infer_target = False
 
         if os.path.isdir(folder_path):
             # Paths to the expected report files
-            compile_without_nc_path = os.path.join(folder_path, "compile_without_nc.html")
-            compile_with_nc_path = os.path.join(folder_path, "compile_with_nc.html")
+            compile_without_nc_path   = os.path.join(folder_path, "compile_without_nc.html")
+            compile_with_nc_path      = os.path.join(folder_path, "compile_with_nc.html")
             infer_ref_without_nc_path = os.path.join(folder_path, "infer_ref_without_nc.html")
-            infer_ref_with_nc_path = os.path.join(folder_path, "infer_ref_with_nc.html")
-            infer_natc_with_nc_path = os.path.join(folder_path, "infer_natc_with_nc.html")
-            infer_ci_with_nc_path = os.path.join(folder_path, "infer_ci_with_nc.html")
+            infer_ref_with_nc_path    = os.path.join(folder_path, "infer_ref_with_nc.html")
+            infer_natc_with_nc_path   = os.path.join(folder_path, "infer_natc_with_nc.html")
+            infer_ci_with_nc_path     = os.path.join(folder_path, "infer_ci_with_nc.html")
             infer_target_with_nc_path = os.path.join(folder_path, "infer_target_with_nc.html")
+            infer_ref_path            = os.path.join(folder_path, "infer_ref.html")
+            infer_natc_path           = os.path.join(folder_path, "infer_natc.html")
+            infer_ci_path             = os.path.join(folder_path, "infer_ci.html")
+            infer_target_path         = os.path.join(folder_path, "infer_target.html")
 
-            total_tests = "N/A"
-            offloaded_tests = "N/A"
-            compile_without_nc_failures = "N/A"
-            compile_with_nc_failures = "N/A"
+            total_tests                   = "N/A"
+            offloaded_tests               = "N/A"
+            compile_without_nc_failures   = "N/A"
+            compile_with_nc_failures      = "N/A"
             infer_ref_without_nc_failures = "N/A"
-            infer_ref_with_nc_failures = "N/A"
-            infer_natc_with_nc_failures = "N/A"
-            infer_ci_with_nc_failures = "N/A"
+            infer_ref_with_nc_failures    = "N/A"
+            infer_natc_with_nc_failures   = "N/A"
+            infer_ci_with_nc_failures     = "N/A"
             infer_target_with_nc_failures = "N/A"
+            infer_ref_failures            = "N/A"
+            infer_natc_failures           = "N/A"
+            infer_ci_failures             = "N/A"
+            infer_target_failures         = "N/A"
 
             if os.path.exists(compile_without_nc_path):
                 compile_without_nc_results = extract_test_results(compile_without_nc_path)
@@ -205,26 +221,72 @@ for dir in SOC_DIR:
                 drop_infer_target_with_nc = False
                 infer_target_with_nc = True
 
+            if os.path.exists(infer_ref_path):
+                infer_ref_results = extract_test_results(infer_ref_path)
+                if offloaded_tests == "N/A":
+                    offloaded_tests = countCompleteOffload(infer_ref_path)
+                if total_tests == "N/A":
+                    total_tests = infer_ref_results[1]
+                infer_ref_failures = total_tests - infer_ref_results[0]
+                drop_infer_ref = False
+                infer_ref = True
+
+            if os.path.exists(infer_natc_path):
+                infer_natc_results = extract_test_results(infer_natc_path)
+                if offloaded_tests == "N/A":
+                    offloaded_tests = countCompleteOffload(infer_natc_path)
+                if total_tests == "N/A":
+                    total_tests = infer_natc_results[1]
+                infer_natc_failures = total_tests - infer_natc_results[0]
+                drop_infer_natc = False
+                infer_natc = True
+
+            if os.path.exists(infer_ci_path):
+                infer_ci_results = extract_test_results(infer_ci_path)
+                if offloaded_tests == "N/A":
+                    offloaded_tests = countCompleteOffload(infer_ci_path)
+                if total_tests == "N/A":
+                    total_tests = infer_ci_results[1]
+                infer_ci_failures = total_tests - infer_ci_results[0]
+                drop_infer_ci = False
+                infer_ci = True
+
+            if os.path.exists(infer_target_path):
+                infer_target_results = extract_test_results(infer_target_path)
+                if offloaded_tests == "N/A":
+                    offloaded_tests = countCompleteOffload(infer_target_path)
+                if total_tests == "N/A":
+                    total_tests = infer_target_results[1]
+                infer_target_failures = total_tests - infer_target_results[0]
+                drop_infer_target = False
+                infer_target = True
+
             if offloaded_tests == "N/A" or total_tests == "N/A":
                 offloaded_tests_percentage = "N/A"
             else:
                 offloaded_tests_percentage = ((float(offloaded_tests) / float(total_tests) * 100))
 
-            total["Total Test"] += total_tests if total_tests != "N/A" else 0
+            total["Total Test"]              += total_tests if total_tests != "N/A" else 0
             total["TIDL Offload Percentage"] += offloaded_tests if offloaded_tests != "N/A" else 0
-            total["Compile without NC"] += compile_without_nc_failures if compile_without_nc_failures != "N/A" else 0
-            total["Compile with NC"] += compile_with_nc_failures if compile_with_nc_failures != "N/A" else 0
-            total["Infer REF without NC"] += infer_ref_without_nc_failures if infer_ref_without_nc_failures != "N/A" else 0
-            total["Infer REF with NC"] += infer_ref_with_nc_failures if infer_ref_with_nc_failures != "N/A" else 0
-            total["Infer NATC with NC"] += infer_natc_with_nc_failures if infer_natc_with_nc_failures != "N/A" else 0
-            total["Infer CI with NC"] += infer_ci_with_nc_failures if infer_ci_with_nc_failures != "N/A" else 0
-            total["Infer TARGET with NC"] += infer_target_with_nc_failures if infer_target_with_nc_failures != "N/A" else 0
+            total["Compile without NC"]      += compile_without_nc_failures if compile_without_nc_failures != "N/A" else 0
+            total["Compile with NC"]         += compile_with_nc_failures if compile_with_nc_failures != "N/A" else 0
+            total["Infer REF without NC"]    += infer_ref_without_nc_failures if infer_ref_without_nc_failures != "N/A" else 0
+            total["Infer REF with NC"]       += infer_ref_with_nc_failures if infer_ref_with_nc_failures != "N/A" else 0
+            total["Infer NATC with NC"]      += infer_natc_with_nc_failures if infer_natc_with_nc_failures != "N/A" else 0
+            total["Infer CI with NC"]        += infer_ci_with_nc_failures if infer_ci_with_nc_failures != "N/A" else 0
+            total["Infer TARGET with NC"]    += infer_target_with_nc_failures if infer_target_with_nc_failures != "N/A" else 0
+            total["Infer REF"]               += infer_ref_failures if infer_ref_failures != "N/A" else 0
+            total["Infer NATC"]              += infer_natc_failures if infer_natc_failures != "N/A" else 0
+            total["Infer CI"]                += infer_ci_failures if infer_ci_failures != "N/A" else 0
+            total["Infer TARGET"]            += infer_target_failures if infer_target_failures != "N/A" else 0
 
             rows.append([folder, str(total_tests), str(offloaded_tests_percentage),
                         str(compile_without_nc_failures), str(compile_with_nc_failures),
                         str(infer_ref_without_nc_failures), str(infer_ref_with_nc_failures),
                         str(infer_natc_with_nc_failures), str(infer_ci_with_nc_failures),
-                        str(infer_target_with_nc_failures)])
+                        str(infer_target_with_nc_failures), str(infer_ref_failures),
+                        str(infer_natc_failures), str(infer_ci_failures),
+                        str(infer_target_failures)])
 
             if infer_ref_with_nc and infer_target_with_nc:
                 compare_report_path = os.path.join(folder_path, "infer_ref_vs_evm.txt")
@@ -232,6 +294,21 @@ for dir in SOC_DIR:
             if infer_ref_with_nc and infer_ref_without_nc:
                 compare_report_path = os.path.join(folder_path, "infer_ref_no_nc_vs_ref_nc.txt")
                 infer_ref_no_nc_vs_ref_nc = compare_report(infer_ref_without_nc_path, infer_ref_with_nc_path, output_path=compare_report_path)
+            if infer_ref_with_nc and infer_natc_with_nc:
+                compare_report_path = os.path.join(folder_path, "infer_ref_nc_vs_natc_nc.txt")
+                infer_ref_nc_vs_natc_nc = compare_report(infer_ref_with_nc_path, infer_natc_with_nc_path, output_path=compare_report_path)
+            if infer_natc_with_nc and infer_ci_with_nc:
+                compare_report_path   = os.path.join(folder_path, "infer_natc_nc_vs_ci_nc.txt")
+                infer_natc_nc_vs_ci_nc = compare_report(infer_natc_with_nc_path, infer_ci_with_nc_path, output_path=compare_report_path)
+            if infer_ref and infer_natc:
+                compare_report_path = os.path.join(folder_path, "infer_ref_vs_natc.txt")
+                infer_ref_vs_natc = compare_report(infer_ref_path, infer_natc_path, output_path=compare_report_path)
+            if infer_natc and infer_ci:
+                compare_report_path = os.path.join(folder_path, "infer_natc_vs_ci.txt")
+                infer_natc_vs_ci = compare_report(infer_natc_path, infer_ci_path, output_path=compare_report_path)
+            if infer_ref and infer_target:
+                compare_report_path   = os.path.join(folder_path, "infer_ref_vs_target.txt")
+                infer_ref_vs_target = compare_report(infer_ref_path, infer_target_path, output_path=compare_report_path)
 
     total["TIDL Offload Percentage"] = (float(total["TIDL Offload Percentage"])/float(total["Total Test"]) * 100) if total["Total Test"] != 0 else 0.0
     rows.append(total.values())
@@ -251,6 +328,14 @@ for dir in SOC_DIR:
         drop_idx.append(8)
     if drop_infer_target_with_nc:
         drop_idx.append(9)
+    if drop_infer_ref:
+        drop_idx.append(10)
+    if drop_infer_natc:
+        drop_idx.append(11)
+    if drop_infer_ci:
+        drop_idx.append(12)
+    if drop_infer_target:
+        drop_idx.append(13)
     
     headers = [item for i, item in enumerate(headers) if i not in drop_idx]
     for idx, row in enumerate(rows):

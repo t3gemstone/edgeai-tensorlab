@@ -29,12 +29,11 @@
 from edgeai_benchmark import constants, utils, datasets, preprocess, sessions, postprocess, metrics
 
 
-# for transformer models we need to set graph_optimization_level = ORT_DISABLE_ALL for onnxruntime
-from onnxruntime import GraphOptimizationLevel
-ORT_DISABLE_ALL = GraphOptimizationLevel.ORT_DISABLE_ALL
-
-
 def get_configs(settings, work_dir):
+    # for transformer models we need to set graph_optimization_level = ORT_DISABLE_ALL for onnxruntime
+    import onnxruntime
+    ORT_DISABLE_ALL = onnxruntime.GraphOptimizationLevel.ORT_DISABLE_ALL
+
     # get the sessions types to use for each model type
     onnx_session_type = settings.get_session_type(constants.MODEL_TYPE_ONNX)
     tflite_session_type = settings.get_session_type(constants.MODEL_TYPE_TFLITE)
@@ -52,7 +51,57 @@ def get_configs(settings, work_dir):
         'postprocess': postproc_transforms.get_transform_classification()
     }
 
+    quant_params_proto_path_disable_option = {constants.ADVANCED_OPTIONS_QUANT_FILE_KEY: ''}
+
     pipeline_configs = {
+        'cl-7000':utils.dict_update(common_cfg,
+            preprocess=preproc_transforms.get_transform_onnx(),
+            session=onnx_session_type(**sessions.get_onnx_session_cfg(settings, work_dir=work_dir, input_optimization=False, with_onnxsim=True,
+                                                tidl_onnx_model_optimizer={'remove_quantize_initializer': True, 'apply_default_optimizers': False}),
+                runtime_options=settings.runtime_options_onnx_qat_v2(**quant_params_proto_path_disable_option),
+                model_path=f'../edgeai-modelforest/models-qdq/vision/classification/imagenet1k/v3-toolkit/hf-transformers/resnet50_quantized_sym_v3.onnx'),
+            model_info=dict(metric_reference={'accuracy_top1%':79.15}, model_shortlist=None, compact_name='resnet50_qdq_sym_v3', shortlisted=False) #resnet50 model -hf(timm) - 80.38 float
+        ),
+        'cl-7010':utils.dict_update(common_cfg,
+            preprocess=preproc_transforms.get_transform_onnx(),
+            session=onnx_session_type(**sessions.get_onnx_session_cfg(settings, work_dir=work_dir, input_optimization=False, with_onnxsim=True,
+                                                tidl_onnx_model_optimizer={'remove_quantize_initializer': True, 'apply_default_optimizers': False}),
+                runtime_options=settings.runtime_options_onnx_qat_v2(**quant_params_proto_path_disable_option),
+                model_path=f'../edgeai-modelforest/models-qdq/vision/classification/imagenet1k/v3-toolkit/hf-transformers/resnet50_quantized_asym_v3.onnx'),
+            model_info=dict(metric_reference={'accuracy_top1%':79.56}, model_shortlist=None, compact_name='resnet50_qdq_asym_v3', shortlisted=False)
+        ),
+        'cl-7020':utils.dict_update(common_cfg,
+            preprocess=preproc_transforms.get_transform_onnx(),
+            session=onnx_session_type(**sessions.get_onnx_session_cfg(settings, work_dir=work_dir, input_optimization=False, with_onnxsim=True,
+                                                tidl_onnx_model_optimizer={'remove_quantize_initializer': True, 'apply_default_optimizers': False}),
+                runtime_options=settings.runtime_options_onnx_qat_v2(**quant_params_proto_path_disable_option),
+                model_path=f'../edgeai-modelforest/models-qdq/vision/classification/imagenet1k/v3-toolkit/hf-transformers/resnet50_1-5_quantized_sym_v3.onnx'),
+            model_info=dict(metric_reference={'accuracy_top1%':79.15}, model_shortlist=None, compact_name='resnet50_1-5_qdq_sym_v3', shortlisted=False) #nvidia resent50-1.5 model - hf - 80.11 float
+        ),
+        'cl-7030':utils.dict_update(common_cfg,
+            preprocess=preproc_transforms.get_transform_onnx(),
+            session=onnx_session_type(**sessions.get_onnx_session_cfg(settings, work_dir=work_dir, input_optimization=False, with_onnxsim=True,
+                                                tidl_onnx_model_optimizer={'remove_quantize_initializer': True, 'apply_default_optimizers': False}),
+                runtime_options=settings.runtime_options_onnx_qat_v2(**quant_params_proto_path_disable_option),
+                model_path=f'../edgeai-modelforest/models-qdq/vision/classification/imagenet1k/v3-toolkit/hf-transformers/resnet50_1-5_quantized_asym_v3.onnx'),
+            model_info=dict(metric_reference={'accuracy_top1%':79.15}, model_shortlist=None, compact_name='resnet50_1-5_qdq_asym_v3', shortlisted=False)
+        ),
+        'cl-7040':utils.dict_update(common_cfg,
+            preprocess=preproc_transforms.get_transform_onnx(),
+            session=onnx_session_type(**sessions.get_onnx_session_cfg(settings, work_dir=work_dir, input_optimization=False, with_onnxsim=True,
+                                                tidl_onnx_model_optimizer={'remove_quantize_initializer': True, 'apply_default_optimizers': False}),
+                runtime_options=settings.runtime_options_onnx_qat_v2(**quant_params_proto_path_disable_option, ext_options={'onnxruntime:graph_optimization_level': ORT_DISABLE_ALL}),
+                model_path=f'../edgeai-modelforest/models-qdq/vision/classification/imagenet1k/v3-toolkit/hf-transformers/deit-tiny-patch16-224_quantized_sym_v3.onnx'),
+            model_info=dict(metric_reference={'accuracy_top1%':69.94}, model_shortlist=None, compact_name='deit-tiny-patch16-224_qdq_sym_v3', shortlisted=False) #deit-tiny - 72.02 float 
+        ),
+        'cl-7050':utils.dict_update(common_cfg,
+            preprocess=preproc_transforms.get_transform_onnx(),
+            session=onnx_session_type(**sessions.get_onnx_session_cfg(settings, work_dir=work_dir, input_optimization=False, with_onnxsim=True,
+                                                tidl_onnx_model_optimizer={'remove_quantize_initializer': True, 'apply_default_optimizers': False}),
+                runtime_options=settings.runtime_options_onnx_qat_v2(**quant_params_proto_path_disable_option, ext_options={'onnxruntime:graph_optimization_level': ORT_DISABLE_ALL}),
+                model_path=f'../edgeai-modelforest/models-qdq/vision/classification/imagenet1k/v3-toolkit/hf-transformers/deit-tiny-patch16-224_quantized_asym_v3.onnx'),
+            model_info=dict(metric_reference={'accuracy_top1%':71.04}, model_shortlist=None, compact_name='deit-tiny-patch16-224_qdq_asym_v3', shortlisted=False)
+        ),
         #################################################################
         #       ONNX MODELS
         #################jai-devkit models###############################

@@ -40,7 +40,7 @@ from .logger_utils import log_color
 
 
 class ParallelRunner:
-    def __init__(self, parallel_processes, desc='TASKS', mininterval=0.15, maxinterval=2.0, tqdm_obj=None,
+    def __init__(self, parallel_processes, desc='TASKS', mininterval=0.15, maxinterval=5.0, tqdm_obj=None,
             overall_timeout=None, instance_timeout=None, check_errors=False, verbose=False):
         self.parallel_processes = parallel_processes
         self.desc = desc
@@ -58,6 +58,7 @@ class ParallelRunner:
         self.terminate_all_flag = False
         self.result_entries = None
         self.check_errors = check_errors
+        self.last_update_time = time.time()
         if verbose:
             warnings.warn('''
             ParallelSubProcess is for tasks that are started with subprocess.Popen()
@@ -127,13 +128,15 @@ class ParallelRunner:
         out_ret = None
         if proc is not None:
             completed = False
-            exit_code = proc.returncode
+            exit_code = proc.returncode if hasattr(proc, 'returncode') else None
             try:
-                err_code = proc.wait(timeout=self.epsinterval)
+                err_code = proc.wait(timeout=self.epsinterval) if hasattr(proc, 'wait') else None
                 if err_code:
                     # raise subprocess.CalledProcessError(err_code, "Error occurred")
                     print(log_color("\nERROR", f"Error occurred: {running_proc_name}", f"Error Code: {err_code} at {__file__}"))
-                    proc.terminate()
+                    if hasattr(proc, 'terminate'):
+                        proc.terminate()
+                    #
                     completed = True
                     return completed, out_ret
                 #
@@ -143,15 +146,18 @@ class ParallelRunner:
                 pass
             except Exception as ex:
                 completed = True
-                proc.terminate()
+                if hasattr(proc, 'terminate'):
+                    proc.terminate()
+                #
                 print(log_color("\nERROR", f"Error occurred: {running_proc_name}", f"Error Code: {ex} at {__file__}"))
             else:
-                out_ret, err_ret = proc.communicate(timeout=self.epsinterval)
+                out_ret, err_ret = proc.communicate(timeout=self.epsinterval) if hasattr(proc, 'communicate') else None, None
                 completed = True
             #
         else:
             # proc = None indicates a completed task
             # especially happens if a ParallelProcess is not lanched, but is a simple task that returns None as proc.
+            # print(log_color("\nERROR", f"Process is None for: {running_proc_name}", f"Check process initialization at {__file__}"))
             completed = True
         #
         return completed, out_ret
@@ -174,7 +180,7 @@ class ParallelRunner:
         #
         return proc_term_msgs
 
-    def _check_running_status(self, check_errors):
+    def _check_running_status(self, check_errors, num_processes):
         running_tasks = []
         completed_tasks = []
         for task_name, task_list in self.queued_tasks.items():
@@ -216,7 +222,9 @@ class ParallelRunner:
                         proc_terminate = len(proc_term_msgs) > 0
                         if proc_terminate:
                             print(f"WARNING: terminating the process - {running_proc_name} - {', '.join(proc_term_msgs)}")
-                            proc.terminate()
+                            if hasattr(proc, 'terminate'):
+                                proc.terminate()
+                            #
                             proc_dict['terminated'] = True
                         #
                     #
@@ -237,17 +245,23 @@ class ParallelRunner:
         num_completed = len(completed_tasks)
         num_running = len(running_tasks)
 
-        self.tqdm_obj.update(num_completed - self.tqdm_obj.n)
-        desc = self.desc + f' TOTAL={self.num_queued_tasks}, NUM_RUNNING={num_running}'
-        self.tqdm_obj.set_description(desc)
-        self.tqdm_obj.set_postfix(postfix=dict(RUNNING=running_tasks, COMPLETED=completed_tasks))
+
+        udate_interval = time.time() - self.last_update_time
+        update_interval_elapsed = (udate_interval > self.maxinterval)
+        if update_interval_elapsed or num_processes == 0:
+            self.last_update_time = time.time()
+            self.tqdm_obj.update(num_completed - self.tqdm_obj.n)
+            desc = self.desc + f' TOTAL={self.num_queued_tasks}, NUM_RUNNING={num_running}'
+            self.tqdm_obj.set_description(desc)
+            self.tqdm_obj.set_postfix(postfix=dict(RUNNING=running_tasks, COMPLETED=completed_tasks))
+
         return num_completed, num_running
 
     def _wait_in_loop(self, num_processes):
         # wait in a loop until the number of running processes come down        
         num_processes = num_processes or 0
         last_check_time = time.time()
-        num_completed, num_running = self._check_running_status(check_errors=self.check_errors)
+        num_completed, num_running = self._check_running_status(check_errors=self.check_errors, num_processes=num_processes)
         while num_running > 0 and num_running >= num_processes and (not self.terminate_all_flag):
             check_interval = time.time() - last_check_time
             check_interval_elapsed = (check_interval > self.maxinterval)
@@ -256,7 +270,7 @@ class ParallelRunner:
             #
             check_errors = (self.check_errors and check_interval_elapsed)
 
-            num_completed, num_running = self._check_running_status(check_errors=check_errors)
+            num_completed, num_running = self._check_running_status(check_errors=check_errors, num_processes=num_processes)
             if num_running >= num_processes:
                 time.sleep(self.mininterval)
             #
@@ -284,7 +298,9 @@ class ParallelRunner:
                 running = (proc is not None) and proc_dict.get('running', False)
                 terminated = (proc is not None) and proc_dict.get('terminated', False)                   
                 if running and (not terminated):
-                    proc.terminate()
+                    if hasattr(proc, 'terminate'):
+                        proc.terminate()
+                    #
                     proc_dict['terminated'] = True       
                     print(f"WARNING: terminating the process - {running_proc_name} - {term_mesage}")                                                   
                 #

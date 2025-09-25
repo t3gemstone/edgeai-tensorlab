@@ -1,4 +1,4 @@
-# Copyright (c) 2018-2021, Texas Instruments
+# Copyright (c) 2018-2025, Texas Instruments
 # All Rights Reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -36,7 +36,15 @@ import subprocess
 import yaml
 import argparse
 import tqdm
-from setuptools import setup, Extension, find_packages
+import hashlib
+import urllib.request
+import urllib.error
+import gzip
+
+
+###############################################################################
+TIDL_TOOLS_TYPE_DEFAULT = ""
+TIDL_TOOLS_VERSION_DEFAULT = "11.1"
 
 
 ###############################################################################
@@ -283,19 +291,30 @@ def download_tidl_tools(download_url, download_path, **tidl_version_dict):
     print("INFO: installing tidl_tools_package...")
     GCC_ARM_AARCH64_NAME="arm-gnu-toolchain-13.2.Rel1-x86_64-aarch64-none-linux-gnu"
     cwd = os.getcwd()
-    # download_path = os.path.join(tidl_tools_package_path, TARGET_SOC)
+    download_path = os.path.abspath(download_path)
     download_tidl_tools_path = os.path.join(download_path, 'tidl_tools')
     shutil.rmtree(download_path, ignore_errors=True)
     os.makedirs(download_path, exist_ok=True)
     try:
         download_and_extract_archive(download_url, download_path, download_path)
         os.chdir(download_tidl_tools_path)
-        os.symlink(os.path.join("..", "..", GCC_ARM_AARCH64_NAME), GCC_ARM_AARCH64_NAME)
+        os.symlink(os.path.join("..", "..", "..", GCC_ARM_AARCH64_NAME), GCC_ARM_AARCH64_NAME)
         with open(os.path.join(download_tidl_tools_path, 'version.yaml'), "w") as fp:
             yaml.safe_dump(tidl_version_dict, fp)
         #
-    except:
-        print(f"ERROR: download_and_extract_archive: {download_url} - failed")
+    except Exception as e:
+        print(f"ERROR: download_and_extract_archive: {download_url} - failed - {e}")
+    #
+    try:
+        download_tidl_tools_path_until_rel, tidl_tools_name = os.path.split(download_tidl_tools_path)
+        download_tidl_tools_path_until_dev, rel_name = os.path.split(download_tidl_tools_path_until_rel)
+        download_tidl_tools_path_symlink_src = os.path.join(rel_name, tidl_tools_name)
+        os.chdir(download_tidl_tools_path_until_dev)
+        remove_link_stauts = os.unlink(tidl_tools_name) if os.path.islink(tidl_tools_name) else None
+        remove_link_stauts = shutil.rmtree(tidl_tools_name) if os.path.exists(tidl_tools_name) else None
+        os.symlink(download_tidl_tools_path_symlink_src, tidl_tools_name)
+    except Exception as e:
+        print(f"ERROR: symlink failed: {download_tidl_tools_path} to {download_tidl_tools_path_symlink_src} - {e}")
     #
     os.chdir(cwd)
     return None
@@ -307,9 +326,9 @@ def download_tidl_tools_package_11_01(install_path, tools_version, tools_type):
     assert tools_version in expected_tools_version, f"ERROR: incorrect tools_version passed:{tools_version} - expected:{expected_tools_version}"
     tidl_tools_version_name=tools_version
     tidl_tools_release_label="r11.1"
-    tidl_tools_release_id="11_01_02_00"
-    c7x_firmware_version="11_01_00_00" #TODO - udpate this for 11.1
-    c7x_firmware_version_possible_update=None #TODO - udpate this for 11.1
+    tidl_tools_release_id="11_01_06_00"
+    c7x_firmware_version="11_01_06_00"
+    c7x_firmware_version_possible_update=None
     print(f"INFO: you have chosen to install tidl_tools version:{tidl_tools_release_id} with default SDK firmware version set to:{c7x_firmware_version}")
     if c7x_firmware_version_possible_update:
         print(f"INFO: to leverage more features, set advanced_options:c7x_firmware_version while model compialtion and update firmware version in SDK to: {c7x_firmware_version_possible_update}")
@@ -333,7 +352,7 @@ def download_tidl_tools_package_11_01(install_path, tools_version, tools_type):
     for target_soc in target_soc_download_urls:
         download_url_base = target_soc_download_urls[target_soc]
         download_url = f"{download_url_base}/tidl_tools{tidl_tools_type_suffix}.tar.gz"
-        download_path = os.path.join(tidl_tools_package_path, target_soc)
+        download_path = os.path.join(tidl_tools_package_path, target_soc, tidl_tools_release_id)
         download_tidl_tools(download_url, download_path, **tidl_version_dict, target_device=target_soc)
     #
     requirements_file = os.path.realpath(os.path.join(os.path.dirname(__file__), f'requirements/requirements_11.1.txt'))
@@ -372,7 +391,7 @@ def download_tidl_tools_package_11_00(install_path, tools_version, tools_type):
     for target_soc in target_soc_download_urls:
         download_url_base = target_soc_download_urls[target_soc]
         download_url = f"{download_url_base}/tidl_tools{tidl_tools_type_suffix}.tar.gz"
-        download_path = os.path.join(tidl_tools_package_path, target_soc)
+        download_path = os.path.join(tidl_tools_package_path, target_soc, tidl_tools_release_id)
         download_tidl_tools(download_url, download_path, **tidl_version_dict, target_device=target_soc)
     #
     requirements_file = os.path.realpath(os.path.join(os.path.dirname(__file__), f'requirements/requirements_11.0.txt'))
@@ -409,7 +428,7 @@ def download_tidl_tools_package_10_01(install_path, tools_version, tools_type):
     for target_soc in target_soc_download_urls:
         download_url_base = target_soc_download_urls[target_soc]
         download_url = f"{download_url_base}/tidl_tools{tidl_tools_type_suffix}.tar.gz"
-        download_path = os.path.join(tidl_tools_package_path, target_soc)
+        download_path = os.path.join(tidl_tools_package_path, target_soc, tidl_tools_release_id)
         download_tidl_tools(download_url, download_path, **tidl_version_dict, target_device=target_soc)
     #
     requirements_file = os.path.realpath(os.path.join(os.path.dirname(__file__), f'requirements/requirements_10.1.txt'))
@@ -442,7 +461,7 @@ def download_tidl_tools_package_10_00(install_path, tools_version, tools_type):
     for target_soc in target_soc_download_urls:
         download_url_base = target_soc_download_urls[target_soc]
         download_url = f"{download_url_base}/tidl_tools{tidl_tools_type_suffix}.tar.gz"
-        download_path = os.path.join(tidl_tools_package_path, target_soc)
+        download_path = os.path.join(tidl_tools_package_path, target_soc, tidl_tools_release_id)
         download_tidl_tools(download_url, download_path, **tidl_version_dict, target_device=target_soc)
     #
     requirements_file = os.path.realpath(os.path.join(os.path.dirname(__file__), f'requirements/requirements_10.0.txt'))
@@ -462,76 +481,68 @@ def setup_tidl_tools(install_path, tools_version, tools_type):
     assert tools_version in down_tidl_tools_package_dict.keys(), f"ERROR: unknown tools_version provided: {tools_version} at {__file__}"
     down_tidl_tools_package_func = down_tidl_tools_package_dict[tools_version]
     requirements_file = down_tidl_tools_package_func(install_path, tools_version, tools_type)
-    os.system(f'pip install -r {requirements_file}')
+    
+    # Use sys.executable to ensure we use the same Python interpreter
+    import subprocess
+    try:
+        subprocess.check_call([sys.executable, '-m', 'pip', 'install', '-r', requirements_file])
+    except subprocess.CalledProcessError as e:
+        print(f"WARNING: Failed to install requirements from {requirements_file}: {e}")
+        print(f"Please manually run: {sys.executable} -m pip3 install -r {requirements_file}")
 
 
 ###############################################################################
-def main(args):
-    readme_file = os.path.realpath(os.path.join(os.path.dirname(__file__), 'README.md'))
-    with open(readme_file,  encoding="utf8") as readme:
-        long_description = readme.read()
-
-    setup(
-        name='tidl_tools_package',
-        version=args.tools_version,
-        description='tidl_tools_package for edgeai-benchmark',
-        long_description=long_description,
-        long_description_content_type='text/markdown',
-        url='https://github.com/TexasInstruments/edgeai-tensorlab/edgeai-benchmark',
-        author='EdgeAI, TIDL & Analytics Algo Teams',
-        author_email='edgeai-dev@list.ti.com',
-        classifiers=[
-            'Development Status :: 4 - Beta'
-            'Programming Language :: Python :: 3.10'
-        ],
-        keywords = 'artifical intelligence, deep learning, image classification, object detection, semantic segmentation, quantization',
-        python_requires='>=3.10',
-        packages=find_packages(),
-        include_package_data=True,
-        project_urls={
-            'Source': 'https://github.com/TexasInstruments/edgeai-tensorlab/edgeai-benchmark',
-            'Bug Reports': 'https://e2e.ti.com/support/processors-group/processors/tags/TIDL',
-        },
-    )
-
-
-def main_download_tools(args):
-    cur_dir = os.getcwd()
-    repo_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
-    os.chdir(repo_dir)
-
+# this function is the entrypoint for download_tidlrunner_tools as specified in pyproject.toml
+def install_package(*install_args, install_cmd="install"):
+    """Install osrt_model_tools package."""
+    
+    package_name = install_args[0].split('@')[0].split('==')[0]
+    # Check if package is already installed
+    if importlib.util.find_spec(package_name) is not None:
+        print(f"INFO: {package_name} is already installed")
+        return True
     try:
-        import tidl_tools_package
-        install_path = tidl_tools_package.__file__
-    except:
-        install_path = None
-        raise RuntimeError(f"ERROR: FAILED install tidl tools with: {vars(args)}")
+        print(f"INFO: Installing {package_name}")
+        install_options = [str(arg) for arg in install_args]
+        install_cmd_list = ["python3", "-m", "pip", install_cmd, "--no-input"] + install_options
+        print("INFO: installing {package_name} using:", " ".join(install_cmd_list))
+        result = subprocess.run(install_cmd_list, check=True, capture_output=True, text=True)
+        
+        print(f"SUCCESS: {package_name} installed successfully")
+        if result.stdout:
+            print("STDOUT:", result.stdout)
+        return True
+    except subprocess.CalledProcessError as e:
+        print(f"ERROR: Failed to install {package_name}")
+        print(f"Return code: {e.returncode}")
+        if e.stdout:
+            print("STDOUT:", e.stdout)
+        if e.stderr:
+            print("STDERR:", e.stderr)
+        return False
+    except Exception as e:
+        print(f"ERROR: Unexpected error during installation: {e}")
+        return False
 
-    if install_path:
-        args.install_path = os.path.dirname(install_path)
-        print(f'INFO: preparing to install tidl tools with: {vars(args)}')
-        setup_tidl_tools(args.install_path, args.tools_version, args.tools_type)
-    #
-    os.chdir(cur_dir)
+
+def uninstall_package(*install_args, install_cmd="uninstall"):
+    install_package(*install_args, install_cmd=install_cmd)
+	
+	
+###############################################################################
+# this function is the entrypoint for download_tidl_tools as specified in pyproject.toml
+def download():
+    uninstall_package("onnxruntime")
+	
+    install_path = os.path.dirname(os.path.realpath(__file__))
+    tools_version = os.environ.get("TIDL_TOOLS_VERSION", TIDL_TOOLS_VERSION_DEFAULT)
+    tools_type = os.environ.get("TIDL_TOOLS_TYPE", TIDL_TOOLS_TYPE_DEFAULT)
+    setup_tidl_tools(install_path, tools_version, tools_type)
+
+
+def main():
+    download()
 
 
 if __name__ == '__main__':
-    TIDL_TOOLS_TYPE_DEFAULT = ""
-    TIDL_TOOLS_VERSION_DEFAULT = "11.1"
-
-    args = argparse.Namespace()
-    args.tools_version = os.environ.get("TIDL_TOOLS_VERSION", TIDL_TOOLS_VERSION_DEFAULT)
-    args.tools_type = os.environ.get("TIDL_TOOLS_TYPE", TIDL_TOOLS_TYPE_DEFAULT)
-    args.setup_type = sys.argv[1]
-    args.install_path = None
-    main(args)
-
-    if args.setup_type in ('develop', 'install'):
-        main_download_tools(args)
-    else:
-        print("================================================ERROR======================================================")
-        raise RuntimeError(f"ERROR: as of now this tidl_tools_package can be installed only develop in mode - but obtained the command:{args.setup_type}"
-             f"\n    recommend to use one of these instead: "
-             f"\n    pip install -e ./tools/"
-             f"\n    python setup.py develop ./tools/")
-        print("==========================================================================================================")
+    main()

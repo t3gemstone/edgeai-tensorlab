@@ -39,8 +39,7 @@ Reference:
 Do ImageNet Classifiers Generalize to ImageNet?
 Benjamin Recht∗, Rebecca Roelofs, Ludwig Schmidt, Vaishaal Shankar
 https://arxiv.org/abs/1902.10811
-Source Code: https://github.com/modestyachts/ImageNetV2'
-Download: http://imagenetv2public.s3-website-us-west-2.amazonaws.com/
+More Information: https://huggingface.co/datasets/vaishaal/ImageNetV2/tree/main
 '''
 
 

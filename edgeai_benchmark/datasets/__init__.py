@@ -228,7 +228,7 @@ def _get_additional_datasets(settings, download=False, dataset_list=None):
 def get_datasets(settings, download=False, dataset_list=None):
     dataset_cache = settings.dataset_cache
     dset_info_dict = get_dataset_info_dict(settings)
-    dataset_list = dataset_list or get_dataset_categories(settings)
+    dataset_list = get_dataset_categories(settings) if dataset_list is None else dataset_list
     # this is the max number of calibration images required for device
     #calibration_frames_nx = (settings.calibration_frames * (self.calibration_iterations_factor or 1.0))
     calibration_frames_nx = int(settings.calibration_frames * constants.CALIBRATION_ITERATIONS_FACTOR_NX)

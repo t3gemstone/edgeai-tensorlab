@@ -479,18 +479,22 @@ class BEVSensorsRead():
             # lidar2img transform after resizing and cropping
             lidar2img = np.eye(4)
             lidar2img[:3, :3] = post_intrin
+            post_intrin = np.copy(lidar2img)
             lidar2img = (lidar2img @ lidar2cam).astype(np.float32)
 
             # lidar2img_org before resizing and cropping
             # Needed for visualization
             lidar2img_org = np.eye(4)
             lidar2img_org[:3, :3] = intrin
-            lidar2img_org = (lidar2img_org @ lidar2cam).astype(np.float32)
+            # lidar2img_org = (lidar2img_org @ lidar2cam).astype(np.float32)
 
             # ego2img
             # Needed for visualization of BEVDet
             ego2img = np.eye(4)
             ego2img[:3, :3] = intrin
+            intrin = np.copy(a=lidar2img_org)
+            
+            lidar2img_org = (lidar2img_org @ lidar2cam).astype(np.float32)
             ego2img = (ego2img @ np.linalg.inv(sensor2ego)).astype(np.float32)
 
             intrins.append(intrin)
@@ -511,8 +515,8 @@ class BEVSensorsRead():
         
         # expand array assuming batch_size = 1
         info_dict['num_cams']       = len(data['cams'])
-        info_dict['intrins']        = np.expand_dims(np.stack(intrins), 0)
-        info_dict['post_intrins']   = np.expand_dims(np.stack(post_intrins), 0)
+        info_dict['intrins']        = np.stack(intrins)
+        info_dict['post_intrins']   = np.stack(post_intrins)
         info_dict['sensor2egos']    = np.expand_dims(np.stack(sensor2egos), 0)
         info_dict['ego2globals']    = np.expand_dims(np.stack(ego2globals), 0)
         info_dict['post_rots']      = np.expand_dims(np.stack(post_rots), 0)
@@ -525,6 +529,10 @@ class BEVSensorsRead():
         info_dict['bda']            = np.expand_dims(bda_mat, 0)
         info_dict['pad_shape']      = (self.crop[3], self.crop[2])
         info_dict['lidar2ego']      = np.array(data['lidar2ego'])
+        info_dict['scene_token']    = data['scene_token']
+        info_dict['timestamp']      = data['timestamp']
+        info_dict['img_timestamp']  = [v['timestamp'] for k, v  in data['cams'].items()]
+        info_dict['delta_timestamp']= [info_dict['timestamp'] - v['timestamp'] for k, v  in data['cams'].items()]
         info_dict['scene_token']    = data['scene_token']
         info_dict['timestamp']      = data['timestamp']
         info_dict['img_timestamp']  = [v['timestamp'] for k, v  in data['cams'].items()]
@@ -605,7 +613,7 @@ class GetPETRGeometry():
         self.position_range = [-61.2, -61.2, -10.0, 61.2, 61.2, 10.0]
 
     def add_lidar2img(self, img, meta):
-        """add 'lidar2img' transformation matrix into batch_input_metas.
+        r"""add 'lidar2img' transformation matrix into batch_input_metas.
 
         Args:
             batch_input_metas (list[dict]): Meta information of multiple inputs
@@ -636,7 +644,7 @@ class GetPETRGeometry():
 
         # forward() in petr_head.py
         # masks is simply (B, N, self.H, self.W) array initialized to False
-        masks = np.zeros((batch_size, num_cams, self.H, self.W)).astype(np.bool)
+        masks = np.zeros((batch_size, num_cams, self.H, self.W)).astype(bool)
 
         eps = 1e-5
         B, N, C, H, W = self.B, num_cams, self.C, self.H, self.W
@@ -885,7 +893,7 @@ class GetBEVDetGeometry():
         coor = ((coor - self.grid_lower_bound) /
                 self.grid_interval)
 
-        coor = coor.astype(np.long).reshape(num_points, 3)
+        coor = coor.astype(np.longlong).reshape(num_points, 3)
         #batch_idx = np.arange(0, B).reshape(B, 1). \
         #    expand(B, num_points // B).reshape(num_points, 1)
         batch_idx = np.arange(0, B).reshape(B, 1)
@@ -898,7 +906,7 @@ class GetBEVDetGeometry():
                (coor[:, 2] >= 0) & (coor[:, 2] < self.grid_size[2])
 
         # for our BEV pooling - coor in 1D tensor
-        num_grids = (B*self.grid_size[2]*self.grid_size[1]*self.grid_size[0]).astype(np.int)
+        num_grids = (B*self.grid_size[2]*self.grid_size[1]*self.grid_size[0]).astype(np.int32)
 
         #bev_feat = np.zeros((num_grids + 1, self.out_channels), device=coor.device)
         bev_feat = np.zeros((num_grids + 1, self.out_channels), dtype=np.float32)
@@ -907,7 +915,7 @@ class GetBEVDetGeometry():
         coor_1d  = coor[:, 3] * (self.grid_size[2] * self.grid_size[1] * self.grid_size[0]) + \
                    coor[:, 2] * (self.grid_size[1] * self.grid_size[0]) + \
                    coor[:, 1] *  self.grid_size[0] + coor[:, 0]
-        coor_1d[np.where(kept==False)] = (B * self.grid_size[2] * self.grid_size[1] * self.grid_size[0]).astype(np.long)
+        coor_1d[np.where(kept==False)] = (B * self.grid_size[2] * self.grid_size[1] * self.grid_size[0]).astype(np.longlong)
         #for i in range(num_points):
         #    if kept[i]:
         #        coor_1d[i]  = coor[i, 3] * (self.grid_size[2] * self.grid_size[1] * self.grid_size[0]) + \
@@ -916,7 +924,7 @@ class GetBEVDetGeometry():
         #    else:
         #        coor_1d[i] = B * self.grid_size[2] * self.grid_size[1] * self.grid_size[0]
 
-        return bev_feat, np.ascontiguousarray(coor_1d.astype(np.long))
+        return bev_feat, np.ascontiguousarray(coor_1d.astype(np.longlong))
 
 
     def __call__(self, data, info_dict):
@@ -1336,8 +1344,8 @@ class GetFastBEVGeometry():
     
         # ego_to_cam
         points_2d_3 = np.matmul(projection, points)  # lidar2img
-        x = (points_2d_3[:, 0] / points_2d_3[:, 2]).round().astype(np.long)  # [6, 160000]
-        y = (points_2d_3[:, 1] / points_2d_3[:, 2]).round().astype(np.long)  # [6, 160000]
+        x = (points_2d_3[:, 0] / points_2d_3[:, 2]).round().astype(np.longlong)  # [6, 160000]
+        y = (points_2d_3[:, 1] / points_2d_3[:, 2]).round().astype(np.longlong)  # [6, 160000]
         z = points_2d_3[:, 2]  # [6, 160000]
         valid = (x >= 0) & (y >= 0) & (x < width) & (y < height) & (z > 0)  # [6, 160000]
 
@@ -1349,7 +1357,7 @@ class GetFastBEVGeometry():
         cum_valid = cum_valid[0]
 
         for i in reversed(range(n_images)):
-            valid_idx = np.multiply(cum_valid, valid[i]).astype(np.bool)
+            valid_idx = np.multiply(cum_valid, valid[i]).astype(bool)
             coor[0, valid_idx] = xy_coor[i, valid_idx] + i*width*height
             cum_valid[valid_idx] = False
 

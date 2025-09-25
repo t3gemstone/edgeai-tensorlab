@@ -28,11 +28,13 @@
 
 import cv2
 from edgeai_benchmark import constants, utils, datasets, preprocess, sessions, postprocess, metrics
-from onnxruntime import GraphOptimizationLevel
 
-ORT_DISABLE_ALL = GraphOptimizationLevel.ORT_DISABLE_ALL
 
 def get_configs(settings, work_dir):
+    # for transformer models we need to set graph_optimization_level = ORT_DISABLE_ALL for onnxruntime
+    import onnxruntime
+    ORT_DISABLE_ALL = onnxruntime.GraphOptimizationLevel.ORT_DISABLE_ALL
+
     # get the sessions types to use for each model type
     onnx_session_type = settings.get_session_type(constants.MODEL_TYPE_ONNX)
 
@@ -133,10 +135,10 @@ def get_configs(settings, work_dir):
             # crop = (left, top, width, height)
             preprocess=preproc_transforms.get_transform_bev_fastbev((1080,1920), (396,704), (0, 70, 704, 256), backend='cv2', interpolation=cv2.INTER_CUBIC),
             session=onnx_session_type(**sessions.get_onnx_session_cfg(settings, work_dir=work_dir, input_mean=[(123.675, 116.280, 103.530)], 
-                                                                      input_scale=[(0.017125, 0.017507, 0.017429)], input_optimization=False,
+                                                                      input_scale=[(0.017125, 0.017507, 0.017429)], input_optimization=True,
                                                                       deny_list_from_start_end_node = {'/TopK':None,
                                                                                                        '/Concat_20':'/Concat_20',
-                                                                                                       '/Gather_9':'/Gather_9',}),
+                                                                                                       '/Gather_9':None}),
                 runtime_options=utils.dict_update(settings.runtime_options_onnx_p2(bev_options={'bev_options:num_temporal_frames': 0}),
                     {'advanced_options:output_feature_16bit_names_list':'/bbox_head/conv_cls/Conv_output_0, /bbox_head/conv_dir_cls/Conv_output_0, /bbox_head/conv_reg/Conv_output_0'}),
                 model_path=f'{settings.models_path}/vision/detection_3d/pandaset/mmdet3d/fastbev/fastbev_mod_pandaset_r18_f1_256x704_20250507.onnx'),
@@ -150,7 +152,7 @@ def get_configs(settings, work_dir):
             # crop = (left, top, width, height)
             preprocess=preproc_transforms.get_transform_bev_fastbev((1080,1920), (396,704), (0, 70, 704, 256), backend='cv2', interpolation=cv2.INTER_CUBIC),
             session=onnx_session_type(**sessions.get_onnx_session_cfg(settings, work_dir=work_dir, input_mean=[(123.675, 116.280, 103.530)], 
-                                                                      input_scale=[(0.017125, 0.017507, 0.017429)], input_optimization=False,
+                                                                      input_scale=[(0.017125, 0.017507, 0.017429)], input_optimization=True,
                                                                       deny_list_from_start_end_node = {}),
                 runtime_options=utils.dict_update(settings.runtime_options_onnx_p2(bev_options={'bev_options:num_temporal_frames': 0},
                     ext_options={'object_detection:meta_arch_type': 7,
@@ -160,7 +162,7 @@ def get_configs(settings, work_dir):
                 model_path=f'{settings.models_path}/vision/detection_3d/pandaset/mmdet3d/fastbev/fastbev_mod_pandaset_nms_r18_f1_256x704_20250507.onnx'),
             postprocess=postproc_transforms.get_transform_bev_detection_fastbev(enable_nms=False),
             metric=dict(),
-            model_info=dict(metric_reference={'mAP':0.4})
+            model_info=dict(metric_reference={'mAP':0.4}, model_shortlist=100)
         ),
     }
 

@@ -30,7 +30,7 @@ From SDK/TIDL version 9.0, the Python version required is 3.10. Create a Python 
 pyenv install 3.10
 pyenv virtualenv 3.10 benchmark
 pyenv activate benchmark
-pip install --upgrade pip setuptools
+pip3 install --upgrade pip setuptools
 ```
 
 Note: Prior to SDK/TIDL version 9.0, the Python version required was 3.6
@@ -88,3 +88,5 @@ Also, the download may take several hours even with a good internet connection.
 Because of all these reasons **some datasets may need to be manually downloaded (especially ImageNet).** To make the datasets manually available, they should be placed at the locations specified for each dataset inside the folder **./dependencies/datasets/** - if you have the datasets stored somewhere else, create symbolic links as necessary.
 
 The following link explains how to **[Obtain Datasets](./datasets.md)** for benchmarking.
+
+

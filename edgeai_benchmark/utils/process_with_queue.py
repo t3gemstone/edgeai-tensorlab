@@ -1,4 +1,4 @@
-# Copyright (c) 2018-2021, Texas Instruments
+# Copyright (c) 2018-2025, Texas Instruments
 # All Rights Reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -40,12 +40,20 @@ from .progress_step import *
 from .logger_utils import *
 
 
-class ProcessWithQueue(multiprocessing.Process):
-    def __init__(self, group=None, target=None, name=None, args=(), kwargs={},
-        result_queue=multiprocessing.Queue(), log_file=None, **proc_kwargs):
+# Create a multiprocessing context with spawn method
+mp_context = multiprocessing.get_context('spawn')
+
+
+class ProcessWithQueue(mp_context.Process):
+    def __init__(self, group=None, target=None, name=None, args=(), kwargs=None,
+        result_queue=None, log_file=None, **proc_kwargs):
+        if kwargs is None:
+            kwargs = {}
+        if result_queue is None:
+            result_queue = mp_context.Queue()
+            
         kwargs = copy.copy(kwargs)
-        kwargs['result_queue'] = result_queue
-        target = functools.partial(self._worker, target)
+        target = functools.partial(self._worker, target, result_queue)
         super().__init__(group, target, name, args, kwargs, **proc_kwargs)
         self.log_file = log_file
         self.returncode = None
@@ -54,9 +62,9 @@ class ProcessWithQueue(multiprocessing.Process):
     def wait(self, input=None, timeout=None):
         try:
             self.join(timeout=timeout)
-        except multiprocessing.TimeoutError:
+        except mp_context.TimeoutError:
             if self.result_queue.empty():
-                raise multiprocessing.TimeoutError
+                raise mp_context.TimeoutError
             #
         except:
             raise RuntimeError(f'Error during wait() in {__file__}')
@@ -65,7 +73,7 @@ class ProcessWithQueue(multiprocessing.Process):
         # join() doesn't seem to be raising TimeoutError, so check the exitcode
         # when timeout occurs in join(), exitcode will have None
         if self.exitcode is None:
-            raise multiprocessing.TimeoutError
+            raise mp_context.TimeoutError
         #
         self.returncode = self.exitcode
         return self.exitcode
@@ -73,9 +81,9 @@ class ProcessWithQueue(multiprocessing.Process):
     def communicate(self, input=None, timeout=None):
         try:
             self.wait(timeout=timeout)
-        except multiprocessing.TimeoutError:
+        except mp_context.TimeoutError:
             if self.result_queue.empty():
-                raise multiprocessing.TimeoutError
+                raise mp_context.TimeoutError
             #
         except:
             raise RuntimeError(f'Error during communicate() in {__file__}')
@@ -84,11 +92,11 @@ class ProcessWithQueue(multiprocessing.Process):
         self.join()
         return result, exception_e
 
-    def _worker(self, task, result_queue):
+    def _worker(self, task, result_queue, **kwargs):
         result = {}
         exception_e = None
         try:
-            result = task()
+            result = task(**kwargs)
         except KeyboardInterrupt:
             print(f"KeyboardInterrupt occurred in worker process: {__file__}")
             traceback.print_exc()

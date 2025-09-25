@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-# Copyright (c) 2018-2021, Texas Instruments
+# Copyright (c) 2018-2025, Texas Instruments
 # All Rights Reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -28,75 +28,94 @@
 # OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-######################################################################
-# change default tidl_tools version if needed
-# examples: 11.1 11.0 10.1 10.0
-TIDL_TOOLS_VERSION=${TIDL_TOOLS_VERSION:-"11.1"}
-echo "TIDL_TOOLS_VERSION=${TIDL_TOOLS_VERSION}"
 
-#######################################################################
-# TIDL_TOOLS_TYPE can be "" or "_gpu" from r9.2 onwards
-# TIDL_TOOLS_TYPE="_gpu" (while running this setup) to install tidl-tools compiled with CUDA support
-# requires nvidia-hpc-sdk to be insalled for it to work: https://developer.nvidia.com/nvidia-hpc-sdk-237-downloads
-TIDL_TOOLS_TYPE=${TIDL_TOOLS_TYPE:-""}
-echo "TIDL_TOOLS_TYPE=${TIDL_TOOLS_TYPE}"
+######################################################################
+CURRENT_WORK_DIR=$(pwd)
+
 
 #######################################################################
 echo 'Installing system dependencies...'
 
+# Function to check if a package is installed using dpkg
+is_package_installed() {
+    local package_name="$1"
+    if dpkg-query -W -f='${Status}' "$package_name" 2>/dev/null | grep -q "install ok installed"; then
+        return 0  # Package is installed
+    else
+        return 1  # Package is not installed
+    fi
+}
+
+# Function to install package only if not already installed
+install_if_missing() {
+    local package_name="$1"
+    if is_package_installed "$package_name"; then
+        echo "✓ Package $package_name is already installed"
+    else
+        echo "Installing $package_name..."
+        sudo apt-get install -y "$package_name"
+    fi
+}
+
 # Dependencies for cmake, onnx, pillow-simd, tidl-graph-visualization
-sudo apt-get install -y cmake \
-                        libffi-dev \
-                        libjpeg-dev zlib1g-dev \
-                        graphviz graphviz-dev protobuf-compiler
+# TBD: "graphviz-dev"
+packages=("cmake" "libffi-dev" "libjpeg-dev" "zlib1g-dev" "protobuf-compiler" "graphviz")
+
+for package in "${packages[@]}"; do
+    install_if_missing "$package"
+done
 
 
-pip3 install --no-input --upgrade pip==24.2 setuptools==73.0.0
-pip3 install --no-input cython wheel numpy==1.23.0 scipy==1.10 pyyaml tqdm
+#######################################################################
+pip3 install -e ./tools --verbose
+
+
+# unsintall onnxruntime and install onnxruntime-tild along with tidl-tools
+# pip3 uninstall -y onnxruntime
+
+
+# download-tidl-tools is a script that defined in and installed via tools/pyproject.toml
+# download and install tidl-tools - this invokes: python3 tools/tidl_tools_package/download.py
+echo "Running: download-tidl-tools..."
+download-tidl-tools
+
 
 ######################################################################
-CURRENT_WORK_DIR=$(pwd)
-TOOLS_BASE_PATH=${CURRENT_WORK_DIR}/tools
+pip3 install -e ./[pc] --verbose
 
-./setup_pandaset.sh
+# download-tidlrunner-tools is a script that defined in and installed via ./pyproject.toml
+# download and install packages - this invokes: python3 edgeai_tidlrunner/download.py
+# pip3 install --no-input onnx-graphsurgeon==0.3.26 --extra-index-url https://pypi.ngc.nvidia.com
+# pip3 install --no-input osrt_model_tools @ git+https://github.com/TexasInstruments/edgeai-tidl-tools.git@11_00_08_00#subdirectory=osrt-model-tools
+echo "Running: download-tidlrunner-tools..."
+download-benchmark-tools
+
+
+#######################################################################
+# pillow-simd for faster resize
+# there as issue with installing pillow-simd through requirements - force it here
+# pip3 uninstall --yes pillow
+# pip3 install --no-input -U --force-reinstall pillow-simd
+
 
 ######################################################################
 if [ -d "${CURRENT_WORK_DIR}/../edgeai-tidl-tools" ]; then
-  echo "--------------------------------------------------------------------------------------------------------------"
   echo "Found local edgeai-tidl-tools, installing osrt_model_tools in develop mode"
-  echo "--------------------------------------------------------------------------------------------------------------"
   pip3 uninstall -y osrt_model_tools
   cd ${CURRENT_WORK_DIR}/../edgeai-tidl-tools/osrt-model-tools
   python3 setup.py develop
   cd ${CURRENT_WORK_DIR}
 fi
 
-#######################################################################
-# install tidl_tools_package
-echo "--------------------------------------------------------------------------------------------------------------"
-echo "INFO: installing tidl-tools-package version: ${TIDL_TOOLS_VERSION}"
-cd ${CURRENT_WORK_DIR}
-TIDL_TOOLS_TYPE=${TIDL_TOOLS_TYPE} TIDL_TOOLS_VERSION=${TIDL_TOOLS_VERSION} python3 ./tools/setup.py develop
-cd ${CURRENT_WORK_DIR}
-
-#######################################################################
-echo 'INFO: installing local module using setup.py...'
-# there as issue with installing pillow-simd through requirements - force it here
-pip3 uninstall --yes pillow
-pip3 install --no-input -U --force-reinstall pillow-simd
-
-pip3 install --no-input -r ./requirements/requirements_pc.txt
-pip3 install --no-input onnx_graphsurgeon==0.3.26 --extra-index-url https://pypi.ngc.nvidia.com
-
-#######################################################################
-# install edgeai_benchmark
-TIDL_TOOLS_TYPE=${TIDL_TOOLS_TYPE} TIDL_TOOLS_VERSION=${TIDL_TOOLS_VERSION} python3 setup.py develop
-echo "--------------------------------------------------------------------------------------------------------------"
 
 ######################################################################
-# PYTHONPATH
-# make sure current directory is visible for python import
-export PYTHONPATH=:${PYTHONPATH}
-echo "PYTHONPATH=${PYTHONPATH}"
+echo "setting pandaset Python package for 3D object detection"
+echo "to use it, make sure the dataset has been downloaded as explained in ./docs/datsets.md"
+./setup_pandaset.sh
 
-echo 'Completed installation.'
+
+#######################################################################
+echo "to be able to use this package, datasets are required. some are automatically downloaded as the benchmark script is invoked."
+echo "for the other datasets, the user may need to download manually, as explained in ./docs/setup_installation.md and ./docs/datasets.md"
+echo "there are various options to restrict the datasets and models used - please see settings_base.yaml"
+echo "completed installation."

@@ -1,4 +1,4 @@
-# Copyright (c) 2018-2021, Texas Instruments
+# Copyright (c) 2018-2025, Texas Instruments
 # All Rights Reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -26,4 +26,21 @@
 # OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-__version__ = "11.0"
+
+import os
+
+from .version import __version__
+
+
+def get_tidl_tools_path(target_device):
+    """
+    Returns the path to the TIDL tools package based on the target device.
+    If target_device is not specified, it defaults to 'AM68A'.
+    """
+    if target_device is None:
+        target_device = 'AM68A'
+        print(f'INFO: No target device specified, defaulting to: {target_device}')
+    
+    tidl_tools_package_base = os.path.abspath(os.path.dirname(__file__))
+    tidl_tools_path = f'{tidl_tools_package_base}/{target_device}/tidl_tools'
+    return tidl_tools_path

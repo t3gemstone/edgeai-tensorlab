@@ -187,7 +187,7 @@ class ModelMakerClassificationDataset(DatasetBase):
 
 
 class ModelMakerSegmentationDataset(DatasetBase):
-    def __init__(self, num_classes=None, download=False, num_frames=None, with_background_class=True, name="modelmaker_seg", **kwargs):
+    def __init__(self, num_classes=None, download=False, num_frames=None, with_background_class=True, name="modelmaker_seg", min_object_size=0, **kwargs):
         super().__init__(num_classes=num_classes, num_frames=num_frames, name=name, **kwargs)
         self.force_download = True if download == 'always' else False
         self.with_background_class = with_background_class
@@ -262,6 +262,7 @@ class ModelMakerSegmentationDataset(DatasetBase):
             self.dataset_store = json.load(afp)
         #
         self.kwargs['dataset_info'] = self.get_dataset_info()
+        self.min_object_size = min_object_size
 
     def download(self, path, split):
         return
@@ -375,7 +376,7 @@ class ModelMakerSegmentationDataset(DatasetBase):
         if len(anno) == 0:
             return False
         # if more than 1k pixels occupied in the image
-        return sum(obj["area"] for obj in anno) > 1000
+        return sum(obj["area"] for obj in anno) > self.min_object_size #1000 -> 0
 
     def _filter_and_remap_categories(self, image, anno, remap=True):
         anno = [obj for obj in anno if obj["category_id"] in self.categories]

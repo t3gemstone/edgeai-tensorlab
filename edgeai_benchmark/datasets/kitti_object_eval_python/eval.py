@@ -9,7 +9,7 @@ if numba_gpu_acc:
     try:
         import numba
     except ImportError as e:
-        os.system('pip install numba')
+        os.system('pip3 install numba')
     #
     from .rotate_iou import rotate_iou_gpu_eval
 else:
