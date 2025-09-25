@@ -45,7 +45,7 @@ def train_one_epoch(model, criterion, optimizer, data_loader, device, epoch, arg
             output = model(image)
             loss = criterion(output, target)
 
-        if not(args.dont_update_parameters):
+        if args.update_parameters:
             optimizer.zero_grad()
             if scaler is not None:
                 scaler.scale(loss).backward()
@@ -84,6 +84,7 @@ def evaluate(args, model, criterion, data_loader, device, print_freq=100, log_su
     dataset_len = len(data_loader)
 
     num_processed_samples = 0
+    confusion_matrix_total = np.zeros((kwargs.get('num_classes'), kwargs.get('num_classes')))
     with torch.inference_mode():
         for i, (image, target) in enumerate(metric_logger.log_every(data_loader, print_freq, header)):
             image = image.to(device, non_blocking=True)
@@ -91,13 +92,13 @@ def evaluate(args, model, criterion, data_loader, device, print_freq=100, log_su
             output = model(image)
             loss = criterion(output, target)
 
-            confusion_matrix_total = np.zeros((kwargs.get('num_classes'), kwargs.get('num_classes')))
             confusion_matrix = multiclass_confusion_matrix(output, target, kwargs.get('num_classes')).cpu().numpy()
             confusion_matrix_total += confusion_matrix
 
-            print('Confusion Matrix:\n {}'.format(tabulate(pd.DataFrame(confusion_matrix,
-            columns=[f"Predicted as: {x}" for x in range(kwargs.get('num_classes'))],
-            index=[f"Ground Truth: {x}" for x in range(kwargs.get('num_classes'))]), headers="keys", tablefmt='grid')))
+            if args.with_confusion_matrix:
+                print('Confusion Matrix:\n {}'.format(tabulate(pd.DataFrame(confusion_matrix,
+                columns=[f"Predicted as: {x}" for x in range(kwargs.get('num_classes'))],
+                index=[f"Ground Truth: {x}" for x in range(kwargs.get('num_classes'))]), headers="keys", tablefmt='grid')))
 
             acc1, acc5 = utils.accuracy(output, target, topk=(1, 5))
             # FIXME need to take into account that the datasets
@@ -361,17 +362,20 @@ def main(args):
                                             pruning_class=args.pruning_class, pruning_type=args.pruning_type, pruning_global=args.pruning_global, pruning_m=args.pruning_m)
 
     if args.quantization == edgeai_torchmodelopt.xmodelopt.quantization.QuantizationVersion.QUANTIZATION_LEGACY:
+        args.train_epoch_size_factor = args.train_epoch_size_factor or int(args.quantize_calib_images)/len(data_loader)
         dummy_input = torch.rand(1,3,args.val_crop_size,args.val_crop_size)
         model = edgeai_torchmodelopt.xmodelopt.quantization.v1.QuantTrainModule(model, dummy_input=dummy_input, total_epochs=args.epochs)
     elif args.quantization == edgeai_torchmodelopt.xmodelopt.quantization.QuantizationVersion.QUANTIZATION_FX:
+        args.train_epoch_size_factor = args.train_epoch_size_factor or int(args.quantize_calib_images)/len(data_loader)
         if args.quantization_method == "QAT":
             model = edgeai_torchmodelopt.xmodelopt.quantization.v2.QATFxModule(model, total_epochs=args.epochs, qconfig_type=args.quantization_type)
         elif args.quantization_method in ("PTQ", "PTC"):
             model = edgeai_torchmodelopt.xmodelopt.quantization.v2.PTCFxModule(model, total_epochs=args.epochs, qconfig_type=args.quantization_type,
-                                                                               dynamo_export=False, bias_calibration_factor=0.01)
-            args.train_epoch_size_factor = int(args.quantize_calib_images)/len(data_loader)
-            args.dont_update_parameters = True
-            
+                                                                            dynamo_export=False, bias_calibration_factor=0.01)
+            args.update_parameters = 0
+        #
+
+
 
     if args.weights_url and args.test_only:
         print(f"loading pretrained checkpoint for test: {args.weights_url}")
@@ -510,7 +514,7 @@ def main(args):
         if args.distributed:
             train_sampler.set_epoch(epoch)
         train_one_epoch(model, criterion, optimizer, data_loader, device, epoch, args, model_ema, scaler)
-        if not(args.dont_update_parameters):
+        if args.update_parameters:
             lr_scheduler.step()
         epoch_acc, conf_matrix = evaluate(args, model, criterion, data_loader_test, device=device, num_classes=num_classes)
         if model_ema:
@@ -536,9 +540,10 @@ def main(args):
                 best_acc = epoch_acc
                 best_conf_matrix = conf_matrix
 
-    print('Best Confusion Matrix:\n {}'.format(tabulate(pd.DataFrame(best_conf_matrix,
-            columns=[f"Predicted as: {x}" for x in range(num_classes)],
-            index=[f"Ground Truth: {x}" for x in range(num_classes)]), headers="keys", tablefmt='grid')))
+    if args.with_confusion_matrix:
+        print('Best Confusion Matrix:\n {}'.format(tabulate(pd.DataFrame(best_conf_matrix,
+                columns=[f"Predicted as: {x}" for x in range(num_classes)],
+                index=[f"Ground Truth: {x}" for x in range(num_classes)]), headers="keys", tablefmt='grid')))
     print('Best Accuracy (Acc@1): {}'.format(best_acc))
 
     # logger.close()
@@ -686,7 +691,7 @@ def get_args_parser(add_help=True):
     parser.add_argument("--use-v2", action="store_true", help="Use V2 transforms")
     parser.add_argument("--weights-state-dict-name", nargs='+', default=["model", "state_dict"], help="the weights member name to load from the checkpoint")
 
-    parser.add_argument("--dont-update-parameters", default=False, type=bool, help="The model parameters will not be updated during training if this flag is set to True")
+    parser.add_argument("--update-parameters", default=1, type=int, help="The model parameters will not be updated during training if this flag is set to True")
     # options to create faster models
     parser.add_argument("--model-surgery", "--lite-model", default=0, type=int, choices=edgeai_torchmodelopt.xmodelopt.surgery.SyrgeryVersion.get_choices(), help="model surgery to create lite models")
 
@@ -709,6 +714,8 @@ def get_args_parser(add_help=True):
                         help="Training validation breaks after one iteration - for quick experimentation")
     parser.add_argument("--val-epoch-size-factor", default=0.0, type=float,
                         help="Training validation breaks after one iteration - for quick experimentation")
+    parser.add_argument("--with-confusion-matrix", default=0, type=int,
+                        help="with confusion matrix during validation")
     return parser
 
 
