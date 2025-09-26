@@ -80,7 +80,7 @@ def get_configs(settings, work_dir):
         #        runtime_options=utils.dict_update(settings.runtime_options_onnx_p2(),
         #            {'advanced_options:output_feature_16bit_names_list':''},
         #            {'advanced_options:max_num_subgraph_nodes':300}),
-        #        model_path=f'../edgeai-modelforest/models-cl/vision/detection_3d/pandaset/petr/petrv1_mod_pandaset_vovnet_352x960_20250509.onnx'),
+        #        model_path=f'../edgeai-modelforest/models-cl/vision/detection_3d/pandaset/petrv1_mod_pandaset_vovnet_352x960_20250509.onnx'),
         #    postprocess=postproc_transforms.get_transform_bev_detection_base(),
         #    metric=dict(),
         #    model_info=dict(metric_reference={'mAP':0.4})
@@ -93,7 +93,7 @@ def get_configs(settings, work_dir):
         #    session=onnx_session_type(**sessions.get_onnx_session_cfg(settings, work_dir=work_dir, input_mean=[(123.675, 116.280, 103.530)], input_scale=[(0.017125, 0.017507, 0.017429)], input_optimization=False),
         #        runtime_options=utils.dict_update(settings.runtime_options_onnx_p2(),
         #            {'advanced_options:output_feature_16bit_names_list':''}),
-        #        model_path=f'../edgeai-modelforest/models-cl/vision/detection_3d/pandaset/bevdet/bevdet_r50_mod_pandaset_288x832_20250512.onnx'),
+        #        model_path=f'../edgeai-modelforest/models-cl/vision/detection_3d/pandaset/bevdet_r50_mod_pandaset_288x832_20250512.onnx'),
         #    postprocess=postproc_transforms.get_transform_bev_detection_bevdet(),
         #    metric=dict(),
         #    model_info=dict(metric_reference={'mAP':0.4})
@@ -108,9 +108,9 @@ def get_configs(settings, work_dir):
         #        runtime_options=utils.dict_update(settings.runtime_options_onnx_p2(ext_options={'onnxruntime:graph_optimization_level': ORT_DISABLE_ALL,
         #                        'object_detection:meta_arch_type': 10,
         #                        'object_detection:meta_layers_names_list':
-        #                        f'{settings.models_path}/vision/detection_3d/pandaset/mmdet3d/bevformer/bevformer_tiny_mod_metaarch.prototxt'}),
+        #                        f'{settings.models_path}/vision/detection_3d/pandaset/mmdet3d/bevformer_tiny_mod_pandaset_544x960_20250602_opt.prototxt'}),
         #            {'advanced_options:output_feature_16bit_names_list':'','advanced_options:max_num_subgraph_nodes': 1536}),
-        #        model_path=f'{settings.models_path}/vision/detection_3d/pandaset/mmdet3d/bevformer/bevformer_tiny_mod_pandaset_544x960_20250602_opt.onnx'),
+        #        model_path=f'{settings.models_path}/vision/detection_3d/pandaset/mmdet3d/bevformer_tiny_mod_pandaset_544x960_20250602_opt.onnx'),
         #    postprocess=postproc_transforms.get_transform_bev_detection_base(),
         #    metric=dict(),
         #    model_info=dict(metric_reference={'mAP':0.4})
@@ -124,7 +124,7 @@ def get_configs(settings, work_dir):
         #    session=onnx_session_type(**sessions.get_onnx_session_cfg(settings, work_dir=work_dir, input_mean=[(103.530, 116.280, 123.675)], input_scale=[(1.0, 1.0, 1.0)], input_optimization=False),
         #        runtime_options=utils.dict_update(settings.runtime_options_onnx_p2(),
         #            {'advanced_options:output_feature_16bit_names_list':''}),
-        #        model_path=f'{settings.models_path}/vision/detection_3d/pandaset/mmdet3d/fcos3d/fcos3d_mod_pandaset_r101_928x1600_20250509.onnx'),
+        #        model_path=f'{settings.models_path}/vision/detection_3d/pandaset/mmdet3d/fcos3d_mod_pandaset_r101_928x1600_20250509.onnx'),
         #    postprocess=postproc_transforms.get_transform_fcos3d(),
         #    metric=dict(),
         #    model_info=dict(metric_reference={'mAP':0.4})
@@ -141,7 +141,7 @@ def get_configs(settings, work_dir):
                                                                                                        '/Gather_9':None}),
                 runtime_options=utils.dict_update(settings.runtime_options_onnx_p2(bev_options={'bev_options:num_temporal_frames': 0}),
                     {'advanced_options:output_feature_16bit_names_list':'/bbox_head/conv_cls/Conv_output_0, /bbox_head/conv_dir_cls/Conv_output_0, /bbox_head/conv_reg/Conv_output_0'}),
-                model_path=f'{settings.models_path}/vision/detection_3d/pandaset/mmdet3d/fastbev/fastbev_mod_pandaset_r18_f1_256x704_20250507.onnx'),
+                model_path=f'{settings.models_path}/vision/detection_3d/pandaset/mmdet3d/fastbev_mod_pandaset_r18_f1_256x704_20250507.onnx'),
             postprocess=postproc_transforms.get_transform_bev_detection_fastbev(),
             metric=dict(),
             model_info=dict(metric_reference={'mAP':0.4})
@@ -157,9 +157,9 @@ def get_configs(settings, work_dir):
                 runtime_options=utils.dict_update(settings.runtime_options_onnx_p2(bev_options={'bev_options:num_temporal_frames': 0},
                     ext_options={'object_detection:meta_arch_type': 7,
                                  'object_detection:meta_layers_names_list':
-                                 f'{settings.models_path}/vision/detection_3d/pandaset/mmdet3d/fastbev/fastbev_mod_pandaset_nms_r18_f1_metaarch.prototxt'}),
+                                 f'{settings.models_path}/vision/detection_3d/pandaset/mmdet3d/fastbev_mod_pandaset_nms_r18_f1_256x704_20250507.prototxt'}),
                     {'advanced_options:output_feature_16bit_names_list':'/bbox_head/conv_cls/Conv_output_0, /bbox_head/conv_dir_cls/Conv_output_0, /bbox_head/conv_reg/Conv_output_0'}),
-                model_path=f'{settings.models_path}/vision/detection_3d/pandaset/mmdet3d/fastbev/fastbev_mod_pandaset_nms_r18_f1_256x704_20250507.onnx'),
+                model_path=f'{settings.models_path}/vision/detection_3d/pandaset/mmdet3d/fastbev_mod_pandaset_nms_r18_f1_256x704_20250507.onnx'),
             postprocess=postproc_transforms.get_transform_bev_detection_fastbev(enable_nms=False),
             metric=dict(),
             model_info=dict(metric_reference={'mAP':0.4}, model_shortlist=100)
