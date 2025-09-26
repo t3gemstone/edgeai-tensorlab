@@ -13,10 +13,10 @@ Edge AI model training, quantization, compilation/benchmark & Model Zoo
 * Release name: **11.1**
 * Git branch: **r11.1**
 * tidl_tools version: **11_01_06_00**
-* [edgeai-tidl-tools](https://github.com/TexasInstruments/edgeai-tidl-tools) git tag: [11_01_06_00](https://github.com/TexasInstruments/edgeai-tidl-tools/releases/tag/11_01_06_00)
+* [edgeai-tidl-tools git tag: 11_01_06_00](https://github.com/TexasInstruments/edgeai-tidl-tools/releases/tag/11_01_06_00)
 * Date: 2025 September 25
 
-Updated to match latest edgeai-tidl-tools release
+Updated to match latest edgeai-tidl-tools release. For more details about features and bug fixes in TIDL, please see the documentation of edgeai-tidl-tools (link above)
 
 Models that are not enabled by default in edgeai-benchmark (model_shortlist=100) have been removed from edgeai-modelzoo as well.
 
