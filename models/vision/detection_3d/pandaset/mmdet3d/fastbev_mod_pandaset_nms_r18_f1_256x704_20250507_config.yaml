@@ -34,7 +34,7 @@ session:
       /bbox_head/conv_dir_cls/Conv_output_0, /bbox_head/conv_reg/Conv_output_0
     advanced_options:params_16bit_names_list: ''
     object_detection:meta_arch_type: 7
-    object_detection:meta_layers_names_list: fastbev_mod_pandaset_nms_r18_f1_metaarch.prototxt
+    object_detection:meta_layers_names_list: fastbev_mod_pandaset_nms_r18_f1_256x704_20250507.prototxt
   model_path: fastbev_mod_pandaset_nms_r18_f1_256x704_20250507.onnx
   model_id: 3dod-8161
   input_details: null
