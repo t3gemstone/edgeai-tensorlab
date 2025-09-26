@@ -178,10 +178,12 @@ class ModelCompilation():
 
         # do not let the calibration_frames exceed calibration_dataset size
         calibration_frames = min(self.params.compilation.calibration_frames, len(calib_dataset))
+        configs_path = os.path.join(edgeai_benchmark_path, 'configs')
 
         settings = edgeai_benchmark.config_settings.ConfigSettings(
                         settings_file,
                         target_device=self.params.common.target_device,
+                        configs_path=configs_path,
                         model_selection=model_selection,
                         modelartifacts_path=self.params.compilation.compilation_path,
                         tensor_bits=self.params.compilation.tensor_bits,
