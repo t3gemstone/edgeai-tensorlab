@@ -1,10 +1,10 @@
 3dod-8161_onnxrt:
   model_name: ONR-3DOD-8161-fastbev_mod_pandaset_nms_r18_f1_256x704_20250507
   recommended: false
-  run_dir: 3dod-8161_onnxrt_mmdet3d_fastbev_fastbev_mod_pandaset_nms_r18_f1_256x704_20250507_onnx
+  run_dir: 3dod-8161_onnxrt_pandaset_mmdet3d_fastbev_mod_pandaset_nms_r18_f1_256x704_20250507_onnx
   session_name: onnxrt
   shortlisted: false
-  size: 70427162
+  size: 70424613
   task_type: bev_detection
 6dpose-7200_onnxrt:
   model_name: ONR-6DPOSE-7200-yolox-s-6d-object_pose-640x480
