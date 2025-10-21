@@ -1,0 +1,17 @@
+{
+  "$schema": "https://raw.githubusercontent.com/jetify-com/devbox/0.15.0/.schema/devbox.schema.json",
+  "packages": [
+    "go-task@latest",
+    "distrobox@latest"
+  ],
+  "env": {
+    "DEVBOX_COREPACK_ENABLED": "true"
+  },
+  "shell": {
+    "init_hook": [
+      "source <(devbox completion $(basename $SHELL))",
+      "source <(task --completion $(basename $SHELL))",
+      "export PS1='📦 devbox:\\[\\033[01;34m\\]\\W\\[\\033[00m\\]> '"
+    ]
+  }
+}

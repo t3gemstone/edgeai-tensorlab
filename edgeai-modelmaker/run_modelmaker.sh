@@ -51,7 +51,7 @@ fi
 
 #################################################################################
 # first argument - target_device - use one of: TDA4VM AM62A AM68A AM69A AM67A AM62
-TARGET_SOC=${1:-"AM68A"}
+TARGET_SOC=${1:-"AM67A"}
 
 # second argument - config_file - use an appropriate config file - see examples given in this folder
 CONFIG_FILE=${2:-"config_classification.yaml"}

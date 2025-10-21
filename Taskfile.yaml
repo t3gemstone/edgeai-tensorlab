@@ -1,0 +1,48 @@
+# T3 Foundation Gemstone Project [t3gemstone.org]
+# SPDX-License-Identifier: Apache-2.0
+
+version: '3'
+
+vars:
+  SOC: '{{ .SOC | default "AM67A" }}'
+  CONFIG: '{{ .CONFIG | default "config_classification.yaml" }}'
+
+tasks:
+
+  default:
+    silent: true
+    cmds:
+      - task --list-all --summary
+      - echo -e "\nEnvironment:\n"
+      - echo "  WORKDIR          = '{{ .WORKDIR }}'"
+      - echo "  SOC          = '{{ .SOC }}'"
+      - echo "  CONFIG          = '{{ .CONFIG }}'"
+      - echo ""
+
+  box:
+    desc: Enter Distrobox's Ubuntu 22.04 image for data labeling and model creation for T3 Gemstone.
+    cmds:
+      - distrobox-list | grep -q 'gemstone-edgeai' || docker build -f Dockerfile -t gemstone-edgeai:latest .
+      - distrobox-assemble create --file distrobox.ini
+      - distrobox-enter --additional-flags "--tty" --name gemstone-edgeai --no-workdir
+
+  install:
+    cmds:
+      - python3 -m venv {{ .WORKDIR }}/.venv/.labelstudio
+      - python3 -m venv {{ .WORKDIR }}/.venv/.edgeai
+      - source {{ .WORKDIR }}/.venv/.labelstudio/bin/activate && pip3 install -qqq label-studio
+      - source {{ .WORKDIR }}/.venv/.edgeai/bin/activate && cd {{ .WORKDIR }}/edgeai-modelmaker && pip3 install --no-input --upgrade pip==24.2 setuptools==73.0.0 && ./setup_cpu.sh
+
+  make:
+    cmds:
+      - source {{ .WORKDIR }}/.venv/.edgeai/bin/activate && cd {{ .WORKDIR }}/edgeai-modelmaker && ./run_modelmaker.sh {{ .SOC }} {{ .WORKDIR }}/configs/{{ .CONFIG }}
+
+  destroy:
+    prompt: This is a dangerous command... Do you want to continue?
+    desc: Destroy everything including docker images, distrobox etc.
+    cmds:
+      - rm -rf .venv/
+      - distrobox stop gemstone-edgeai --yes || true
+      - distrobox rm gemstone-edgeai --force || true
+      - sudo docker stop gemstone-edgeai || true
+      - sudo docker rmi gemstone-edgeai || true
