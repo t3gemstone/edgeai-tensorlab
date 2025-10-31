@@ -33,6 +33,10 @@ tasks:
       - source {{ .WORKDIR }}/.venv/.labelstudio/bin/activate && pip3 install -qqq label-studio
       - source {{ .WORKDIR }}/.venv/.edgeai/bin/activate && cd {{ .WORKDIR }}/edgeai-modelmaker && pip3 install --no-input --upgrade pip==24.2 setuptools==73.0.0 && ./setup_cpu.sh
 
+  label-studio:
+    cmds:
+      - source {{ .WORKDIR }}/.venv/.labelstudio/bin/activate && label-studio start
+
   make:
     cmds:
       - source {{ .WORKDIR }}/.venv/.edgeai/bin/activate && cd {{ .WORKDIR }}/edgeai-modelmaker && ./run_modelmaker.sh {{ .SOC }} {{ .WORKDIR }}/configs/{{ .CONFIG }}
