@@ -1,132 +1,78 @@
-## Notice
-* Read the documentation landing page before using this repository: [https://github.com/TexasInstruments/edgeai](https://github.com/TexasInstruments/edgeai)
-* Specifically the section: [edgeai-mpu](https://github.com/TexasInstruments/edgeai/tree/main/edgeai-mpu)
+<p align="center">
+    <picture>
+        <source media="(prefers-color-scheme: dark)" srcset=".meta/logo-dark.png" width="40%" />
+        <source media="(prefers-color-scheme: light)" srcset=".meta/logo-light.png" width="40%" />
+        <img alt="T3 Foundation" src=".meta/logo-light.png" width="40%" />
+    </picture>
+</p>
 
-<hr>
+# T3 Gemstone edgeai-tensorlab
 
-# edgeai-tensorlab 
-Edge AI model training, quantization, compilation/benchmark & Model Zoo
+ [![T3 Foundation](./.meta/t3-foundation.svg)](https://www.t3vakfi.org/en) [![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](https://opensource.org/licenses/Apache-2.0) [![Built with Distrobox](https://img.shields.io/badge/Built_with-distrobox-red)](https://github.com/89luca89/distrobox) [![Built with Devbox](https://www.jetify.com/img/devbox/shield_galaxy.svg)](https://www.jetify.com/devbox/docs/contributor-quickstart/) [![Documentation](https://img.shields.io/badge/Documentation-gray?style=flat&logo=Mintlify)](https://docs.t3gemstone.org)
+[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/t3gemstone/edgeai-tensorlab)
 
-<hr>
+## What is it?
 
-## Release 11.1
-* Release name: **11.1**
-* Git branch: **r11.1**
-* tidl_tools version: **11_01_06_00**
-* [edgeai-tidl-tools git tag: 11_01_06_00](https://github.com/TexasInstruments/edgeai-tidl-tools/releases/tag/11_01_06_00)
-* Date: 2025 September 25
+This project includes all the necessary work for develop the vision process model for T3 Gemstone boards.
 
-Updated to match latest edgeai-tidl-tools release. For more details about features and bug fixes in TIDL, please see the documentation of edgeai-tidl-tools (link above)
+All details related to the project can be found at https://docs.t3gemstone.org/en/visionprocesses/edgeaitensorlab. Below, only a summary of how to perform the installation is provided.
 
-Models that are not enabled by default in edgeai-benchmark (model_shortlist=100) have been removed from edgeai-modelzoo as well.
+##### 1. Install Docker and jetify-devbox on the host computer.
 
-Example config files for models (_config.yaml file for each model) have been made more consistent - these now mostly only have parameters that are related to the model properties.
-
-
-**More details are in the [Release Notes](./docs/release_notes.md)**
-
-
-<hr>
-
-## Cloning this repository
-This repository is an aggregation of multiple repositories using git subtree. Due to large number of commits, git clone can be slow. Recommend to clone only the required depth. For example, to clone the main branch with a shallow depth=1:
-
-
-```
-git clone --depth 1 https://github.com/TexasInstruments/edgeai-tensorlab.git
+```bash
+user@host:$ ./setup.sh
 ```
 
-If you have done a shallow clone and later need the full history, you can fetch more commits. This will convert the shallow clone into a full clone by fetching the entire history of commits.
+<a name="section-ii"></a>
+##### 2. After the installation is successful, activate the jetify-devbox shell to automatically install tools such as Distrobox, taskfile, etc.
 
-```
-git fetch --unshallow
-```
-
-Or, you can incrementally deepen the history:
-
-```
-git fetch --depth=<new_depth>
+```bash
+user@host:$ devbox shell
 ```
 
-<hr>
+##### 3. Download the repositories, create a Docker image, and enter it.
 
-## How to get started
+```bash
+📦 devbox:edgeai-tensorlab> task box
+```
 
-Want do use Edge AI on TI's MPU devices - but don't know where to start? We have multiple solutions to help develop and deploy models.
+##### 4. Installs the necessary packages and develop new vision process model.
 
-### Develop your model
+```bash
+# Installs the necessary packages
+🚀 distrobox:workdir> task install
 
-#### [EDGE-AI-STUDIO](https://www.ti.com/tool/EDGE-AI-STUDIO) - easy to use GUI tools 
-* Model Composer: Capture images, annotate them, train and compile models using GUI.
-* Model Analyzer: Use our hosted Jupyter notebooks to try model compilation online.
+# Runs the Label Studio
+🚀 distrobox:workdir> task label-studio
 
-#### [edgeai-modelmaker](edgeai-modelmaker) - a commandline tool that supports Bring Your Own Data (BYOD) development flow 
-* Use EDGE-AI-STUDIO Model Composer (above GUI tool) to collect and annotate data to create a dataset
-* Export the dataset on to your machine.
-* Use edgeai-modelmaker to train a model using the dataset. edgeai-modelmaker allows you to tweak more parameters than what is supported in the GUI tool
-* It is fully customizable, so you can look at how models and tasks are integrated and even add your own model or tasks.
+# Runs the Model Maker
+🚀 distrobox:workdir> task make CONFIG=config_classification.yaml
 
-#### [edgeai-modelzoo](edgeai-modelzoo) - for advanced users
-* Navigagte to [edgeai-modelzoo](edgeai-modelzoo) to see see example models, their documentation and performance benchmarks.
-* Browse to the respositories that were used to train those models and try to train your own model using one of those.
+```
 
+# Troubleshooting
 
-### Deploy your model
-* Use [edgeai-benchmark](edgeai-benchmark) or [edgeai-tidl-tools](https://github.com/TexasInstruments/edgeai-tidl-tools) to compile models and create compiled artifacts.
-* Run the compiled models using [Edge AI SDK](https://github.com/TexasInstruments/edgeai/blob/main/edgeai-mpu/readme_sdk.md)
+#### 1. First Installation of Docker
 
-<hr>
-<hr>
+Docker is installed on your system via the `./setup.sh` command. If you are installing Docker for the first time, you must log out and log in again after the installation is complete.
 
+#### 2. Failed `task box` command
 
-## Components
-* The subcomponents have detailed documentation. In the browser, navigate into the sub-folders to see detailed documentation. Here is a high level overview.
+```sh
+📦 devbox:edgeai-tensorlab> task box
+task: Failed to run task "box": exit status 1
+Error: An error occurred
+```
 
-| Category                                | ToolLink                                     | Purpose                                          | IS NOT    |
-|-----------------------------------------|----------------------------------------------|--------------------------------------------------|-----------|
-| Model Zoo / Models collection      | [edgeai-modelzoo](edgeai-modelzoo)           | provides collection of pretrained models, documentation & benchmark information         |           |
-|Model compilation & benchmarking     | [edgeai-benchmark](edgeai-benchmark)         | Wrapper on top of [edgeai-tidl-tools](https://github.com/TexasInstruments/edgeai-tidl-tools) for easy model compilation and speed/accuracy benchmarking<br>- Bring your own model and compile, benchmark and generate artifacts for deployment on SDK with camera, inference and display (using edgeai-gst-apps)<br>- Comprehends inference pipeline including dataset loading, pre-processing and post-processing<br>- Benchmarking of accuracy and latency with large data sets<br>- Post training quantization<br>- Docker for easy development environment setup |  |
-|Model training tools                 | [edgeai-modeloptimization](edgeai-modeloptimization)    | **Model optimization tools** for improved model training, tools to train TIDL friendly models.<br>- **Model surgery**: Modifies models with minimal loss in accuracy and makes it suitable for TI device (replaces unsupported operators)<br>- **QAT**: **Quantization Aware Training** to improve accuracy with fixed point quantization<br>- Model Pruning/sparsity: Induces sparsity during training – only applicable for specific devices - this is in development.<br> |- Does not support Tensorflow   |
-|Model training code    | [**edgeai-torchvision**](edgeai-torchvision)<br>[**edgeai-mmdetection**](edgeai-mmdetection)<br>[edgeai-mmdetection3d](edgeai-mmdetection3d)<br>[edgeai-hf-transformers](edgeai-hf-transformers)<br>[edgeai-mmpose](edgeai-mmpose)<br>[edgeai-tensorvision](edgeai-tensorvision) | Training repositories for various tasks<br>- Provides extensions of popular training repositories (like mmdetection, torchvision) with lite version of models |- Does not support Tensorflow |
-|**End-to-end Model development - Datasets, Training & Compilation**   | [**edgeai-modelmaker**](edgeai-modelmaker)       | **Beginner friendly**, command line, integrated environment for training & compilation<br>- Bring your own data, select a model, perform training and generate artifacts for deployment on SDK<br>- Backend tool for model composer (early availability of features compared to Model Composer ) |- Does not support Bring Your Own Model workflow |
-|Example datasets, used in edgeai-modelmaker         | [edgeai-datasets](edgeai-datasets)           | Example datasets   |          |
+To figure out what exact problem is, run `distrobox-enter --additional-flags "--tty" --name gemstone-edgeai --no-workdir --verbose`
 
-<hr>
+```sh
+*** update-locale: Error: invalid locale settings:  LC_ALL=en_EN.UTF-8 LANG=en_EN.UTF-8
+```
 
-### Deprecations
-| Category                                | ToolLink                                     | Purpose                                          | IS NOT    |
-|-----------------------------------------|----------------------------------------------|--------------------------------------------------|-----------|
-| Model training code     | [edgeai-yolox](edgeai-yolox) is being deprecated - use [edgeai-mmpose](edgeai-mmpose) for Keypoint detection and [edgeai-mmdetection](edgeai-mmdetection) for Object Detection |  |  |
+To solve this problem, try to update locales
 
+```bash
+📦 devbox:edgeai-tensorlab> sudo dpkg-reconfigure locales 
+```
 
-<hr>
-<hr>
-
-
-## Tech Reports
-
-Technical documentation can be found in the documentation of each repository. Here we have a collection of technical reports & tutorials that give high level overview on various topics - see [**Edge AI Tech Reports**](./docs/tech_reports/README.md).
-
-<hr>
-<hr>
-
-## Acknowledgements
-This umbrella repository uses and modifies several source repositories. The following table can be used to navigate to the source of the original repositories and see the contents & contributors.
-
-| Sub-repository/Sub-directory     | Original source repository   |
-|----------------------------------|------------------------------| 
-|edgeai-hf-transformers           | [https://github.com/huggingface/transformers](https://github.com/huggingface/transformers) |
-|edgeai-mmdeploy                   | [https://github.com/open-mmlab/mmdeploy](https://github.com/open-mmlab/mmdeploy) |
-|edgeai-mmdetection                | [https://github.com/open-mmlab/mmdetection](https://github.com/open-mmlab/mmdetection) |
-|edgeai-mmdetection3d              | [https://github.com/open-mmlab/mmdetection3d](https://github.com/open-mmlab/mmdetection3d) |
-|edgeai-mmpose                     | [https://github.com/open-mmlab/mmpose](https://github.com/open-mmlab/mmpose) |
-|edgeai-torchvision                | [https://github.com/pytorch/vision](https://github.com/pytorch/vision) |
-|edgeai-yolox                      | [https://github.com/Megvii-BaseDetection/YOLOX](https://github.com/Megvii-BaseDetection/YOLOX) |
-|edgeai-benchmark                  |  NA  |
-|edgeai-modelzoo                   |  NA  |
-|edgeai-modelmaker                 |  NA  |
-|edgeai-modeloptimization          |  NA  |
-|edgeai-tensorvision               |  NA  |
-
-<hr>
-<hr>

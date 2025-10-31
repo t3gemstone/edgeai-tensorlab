@@ -1,7 +1,15 @@
 *.pyc
+*.lock
 *.egg-info/
 .idea/
 .vscode/
+.devbox
+.distrobox/.cache
+.distrobox/.distroboxrc
+.distrobox/.sudo_as_admin_successful
+.distrobox/.gitconfig
+.distrobox/.bash_history
+result*
 edgeai-benchmark/tools/*
 edgeai-benchmark/work_dirs/modelartifcats/*
 edgeai-modelmaker/data/projects/*
